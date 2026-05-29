@@ -1,0 +1,52 @@
+{
+  "Admonition": {
+    "prefix": "!!!",
+    "body": [
+      "!!! ${1|note,info,tip,success,question,warning,danger,example,quote,propriete,definition,methode,remarque|} \"${2:Titre}\"",
+      "",
+      "    ${0:Contenu de l'admonition}"
+    ],
+    "description": "Bloc admonition MkDocs (Material / pymdownx)"
+  },
+  "Admonition repliable": {
+    "prefix": "???",
+    "body": [
+      "???${1|+,|} ${2|note,info,tip,warning,danger,example,question,propriete,definition|} \"${3:Titre}\"",
+      "",
+      "    ${0:Contenu repliable}"
+    ],
+    "description": "Admonition repliable (??? = fermée, ???+ = ouverte)"
+  },
+  "Bloc mathématique": {
+    "prefix": "math",
+    "body": [
+      "$$",
+      "${0}",
+      "$$"
+    ],
+    "description": "Bloc mathématique (arithmatex)"
+  },
+  "Onglets": {
+    "prefix": "===",
+    "body": [
+      "=== \"${1:Onglet 1}\"",
+      "",
+      "    ${2:Contenu}",
+      "",
+      "=== \"${3:Onglet 2}\"",
+      "",
+      "    ${0:Contenu}"
+    ],
+    "description": "Volets glissants (pymdownx.tabbed)"
+  },
+  "Légende d'image": {
+    "prefix": "fig",
+    "body": [
+      "![${1:texte alternatif}](${2:chemin}){${3:.center}}",
+      "/// caption",
+      "${0:Légende}",
+      "///"
+    ],
+    "description": "Image avec légende (pymdownx.blocks.caption)"
+  }
+}
