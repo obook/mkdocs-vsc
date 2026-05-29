@@ -23,10 +23,34 @@ function config() {
   return vscode.workspace.getConfiguration('mkdocsLivePreview')
 }
 
-/** Racine du premier dossier de l'espace de travail, ou undefined. */
-function workspaceRoot() {
-  const folders = vscode.workspace.workspaceFolders
-  return folders && folders.length ? folders[0].uri.fsPath : undefined
+/**
+ * Racine du projet MkDocs : premier dossier contenant le fichier de config,
+ * en remontant depuis le fichier actif puis depuis les dossiers de l'espace
+ * de travail. Gère le cas où l'on a ouvert un dossier parent ou un sous-dossier
+ * du projet. Renvoie undefined si aucun mkdocs.yml n'est trouvé.
+ */
+function findProjectRoot() {
+  const configFile = config().get('configFile')
+  const climb = (start) => {
+    let dir = start
+    for (let i = 0; i < 12 && dir; i++) {
+      if (fs.existsSync(path.join(dir, configFile))) return dir
+      const parent = path.dirname(dir)
+      if (parent === dir) break
+      dir = parent
+    }
+    return undefined
+  }
+  const editor = vscode.window.activeTextEditor
+  if (editor && editor.document.uri.scheme === 'file') {
+    const fromFile = climb(path.dirname(editor.document.uri.fsPath))
+    if (fromFile) return fromFile
+  }
+  for (const folder of vscode.workspace.workspaceFolders || []) {
+    const fromFolder = climb(folder.uri.fsPath)
+    if (fromFolder) return fromFolder
+  }
+  return undefined
 }
 
 /** Résout l'exécutable mkdocs : réglage explicite, sinon .venv du projet, sinon PATH. */
@@ -61,7 +85,7 @@ function readMkdocsConfig(root) {
  * Renvoie null si le fichier n'est pas un Markdown situé sous docs_dir.
  */
 function pagePathForFile(filePath) {
-  const root = workspaceRoot()
+  const root = findProjectRoot()
   if (!root) return null
   if (!/\.(md|markdown)$/i.test(filePath)) return null
 
@@ -92,9 +116,11 @@ function updateStatus() {
 }
 
 function startServer() {
-  const root = workspaceRoot()
+  const root = findProjectRoot()
   if (!root) {
-    vscode.window.showErrorMessage('MkDocs Live Preview : ouvrez d\'abord le dossier du projet.')
+    vscode.window.showErrorMessage(
+      `MkDocs Live Preview : aucun ${config().get('configFile')} trouvé (ni dans le dossier ouvert, ni au-dessus du fichier actif).`
+    )
     return
   }
   if (serverProc) {
@@ -148,11 +174,6 @@ function stopServer() {
   }
 }
 
-/** Le dossier contient-il le fichier de config MkDocs ? */
-function hasMkdocsConfig(root) {
-  return fs.existsSync(path.join(root, config().get('configFile')))
-}
-
 async function restartServer() {
   stopServer()
   // petit délai pour libérer le port avant de relancer
@@ -179,6 +200,19 @@ function isPortOpen(host, port, timeout = 600) {
   })
 }
 
+/** Attend que le serveur réponde sur host:port (le build initial prend du temps). */
+async function waitForServer(timeoutMs = 20000) {
+  const cfg = config()
+  const host = cfg.get('host')
+  const port = cfg.get('port')
+  const start = Date.now()
+  while (Date.now() - start < timeoutMs) {
+    if (await isPortOpen(host, port, 500)) return true
+    await new Promise((r) => setTimeout(r, 400))
+  }
+  return false
+}
+
 /**
  * Garantit qu'un serveur sert bien le projet du dossier courant.
  * Redémarre si on a changé de projet, démarre si aucun n'est géré, et avertit
@@ -186,15 +220,11 @@ function isPortOpen(host, port, timeout = 600) {
  * autre projet). Renvoie false si le dossier courant n'est pas un projet MkDocs.
  */
 async function ensureServer() {
-  const root = workspaceRoot()
+  const root = findProjectRoot()
   if (!root) {
-    vscode.window.showErrorMessage('MkDocs Live Preview : ouvrez d\'abord le dossier du projet.')
-    return false
-  }
-  if (!hasMkdocsConfig(root)) {
     stopServer()
     vscode.window.showWarningMessage(
-      `MkDocs Live Preview : aucun ${config().get('configFile')} dans ce dossier.`
+      `MkDocs Live Preview : aucun ${config().get('configFile')} trouvé (ni dans le dossier ouvert, ni au-dessus du fichier actif).`
     )
     return false
   }
@@ -238,18 +268,31 @@ function webviewHtml(origin) {
 <meta http-equiv="Content-Security-Policy"
   content="default-src 'none'; frame-src ${origin}; style-src 'unsafe-inline'; script-src 'unsafe-inline';">
 <style>
-  html, body { margin: 0; padding: 0; height: 100%; }
+  html, body { margin: 0; padding: 0; height: 100%; background: #fff; }
   iframe { width: 100%; height: 100vh; border: 0; background: #fff; }
+  #overlay {
+    position: fixed; inset: 0; display: flex; align-items: center;
+    justify-content: center; padding: 1rem; text-align: center;
+    font-family: sans-serif; font-size: 13px; color: #888; background: #fff;
+  }
 </style>
 </head>
 <body>
-<iframe id="frame" src="${origin}"></iframe>
+<div id="overlay">Démarrage du serveur MkDocs…</div>
+<iframe id="frame"></iframe>
 <script>
   const frame = document.getElementById('frame')
+  const overlay = document.getElementById('overlay')
+  frame.addEventListener('load', () => { if (frame.src) overlay.style.display = 'none' })
   window.addEventListener('message', (event) => {
     const msg = event.data
-    if (msg && msg.type === 'navigate' && typeof msg.url === 'string') {
+    if (!msg) return
+    if (msg.type === 'navigate' && typeof msg.url === 'string') {
+      overlay.style.display = 'none'
       frame.src = msg.url
+    } else if (msg.type === 'status' && typeof msg.text === 'string') {
+      overlay.textContent = msg.text
+      overlay.style.display = 'flex'
     }
   })
 </script>
@@ -258,13 +301,14 @@ function webviewHtml(origin) {
 }
 
 /** Navigue l'aperçu vers la page du fichier Markdown actif. */
-function navigateToActive() {
+function navigateToActive(force = false) {
   if (!previewPanel || !externalBase) return
   const editor = vscode.window.activeTextEditor
-  if (!editor) return
-  const page = pagePathForFile(editor.document.uri.fsPath)
-  if (page === null) return // fichier hors site : on laisse l'aperçu en l'état
-  previewPanel.webview.postMessage({ type: 'navigate', url: `${externalBase}/${page}` })
+  const page = editor ? pagePathForFile(editor.document.uri.fsPath) : null
+  // En suivi auto, on ne touche pas l'aperçu pour un fichier hors site ; en
+  // mode forcé (ouverture initiale), on va au moins à la racine du site.
+  if (page === null && !force) return
+  previewPanel.webview.postMessage({ type: 'navigate', url: `${externalBase}/${page || ''}` })
 }
 
 async function openPreview(toSide) {
@@ -285,8 +329,19 @@ async function openPreview(toSide) {
   } else {
     previewPanel.reveal(toSide ? vscode.ViewColumn.Beside : undefined, true)
   }
-  // Laisse l'iframe se créer avant de poster la première navigation.
-  setTimeout(navigateToActive, 150)
+  // Le build initial de mkdocs prend quelques secondes : on attend que le
+  // serveur réponde avant de charger la page, sinon l'iframe affiche une page
+  // blanche (connexion refusée) sans réessayer.
+  previewPanel.webview.postMessage({ type: 'status', text: 'Démarrage du serveur MkDocs…' })
+  const ready = await waitForServer()
+  if (!ready) {
+    previewPanel.webview.postMessage({
+      type: 'status',
+      text: 'Le serveur MkDocs ne répond pas. Voir la sortie « MkDocs Live Preview ».'
+    })
+    return
+  }
+  navigateToActive(true)
 }
 
 function activate(context) {
@@ -309,8 +364,8 @@ function activate(context) {
     // Changement de projet (ajout/retrait de dossier) : on resservira le bon
     // projet au prochain rendu si un aperçu est ouvert.
     vscode.workspace.onDidChangeWorkspaceFolders(async () => {
-      if (previewPanel && (await ensureServer())) {
-        setTimeout(navigateToActive, 300)
+      if (previewPanel && (await ensureServer()) && (await waitForServer())) {
+        navigateToActive(true)
       }
     })
   )
