@@ -5,6 +5,19 @@
   "version": "0.1.0",
   "publisher": "obook",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/obook/mkdocs-vsc.git"
+  },
+  "bugs": {
+    "url": "https://github.com/obook/mkdocs-vsc/issues"
+  },
+  "keywords": [
+    "mkdocs",
+    "markdown",
+    "preview",
+    "documentation"
+  ],
   "engines": {
     "vscode": "^1.90.0"
   },

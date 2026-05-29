@@ -1,0 +1,7 @@
+.vscode/**
+.git/**
+dist/**
+build.sh
+jsconfig.json
+.gitignore
+**/*.map
