@@ -8,5 +8,13 @@
   "MkDocs server running - click to open the preview": "MkDocs server running - click to open the preview",
   "MkDocs server stopped - click to start it and open the preview": "MkDocs server stopped - click to start it and open the preview",
   "Starting the MkDocs server…": "Starting the MkDocs server…",
-  "The MkDocs server is not responding. See the \"MkDocs Live Preview\" output.": "The MkDocs server is not responding. See the \"MkDocs Live Preview\" output."
+  "The MkDocs server is not responding. See the \"MkDocs Live Preview\" output.": "The MkDocs server is not responding. See the \"MkDocs Live Preview\" output.",
+  "Python 3 was not found, but MkDocs needs it. {0}": "Python 3 was not found, but MkDocs needs it. {0}",
+  "Install Python from https://www.python.org/downloads/ (or run \"winget install Python.Python.3\").": "Install Python from https://www.python.org/downloads/ (or run \"winget install Python.Python.3\").",
+  "Install Python with \"brew install python\", or from https://www.python.org/downloads/.": "Install Python with \"brew install python\", or from https://www.python.org/downloads/.",
+  "Install Python with your package manager, e.g. \"sudo apt install python3 python3-venv\".": "Install Python with your package manager, e.g. \"sudo apt install python3 python3-venv\".",
+  "MkDocs was not found. Install it in a virtual environment, then try again.": "MkDocs was not found. Install it in a virtual environment, then try again.",
+  "Copy install command": "Copy install command",
+  "Installation guide": "Installation guide",
+  "Install command copied to the clipboard.": "Install command copied to the clipboard."
 }

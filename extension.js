@@ -220,6 +220,102 @@ async function waitForServer(timeoutMs = 20000) {
   return false
 }
 
+/** Une commande peut-elle être exécutée ? (false si ENOENT / introuvable). */
+function canRun(cmd, args, useShell) {
+  return new Promise((resolve) => {
+    let done = false
+    const finish = (v) => {
+      if (!done) {
+        done = true
+        resolve(v)
+      }
+    }
+    try {
+      const child = cp.spawn(cmd, args, { stdio: 'ignore', shell: !!useShell })
+      child.on('error', () => finish(false)) // binaire introuvable
+      child.on('exit', () => finish(true)) // a pu s'exécuter (code quelconque)
+      setTimeout(() => {
+        try {
+          child.kill()
+        } catch {
+          // ignore
+        }
+        finish(true)
+      }, 4000)
+    } catch {
+      finish(false)
+    }
+  })
+}
+
+/** Commande prête à coller pour créer le venv et installer MkDocs (selon l'OS). */
+function suggestedInstallCommand(root, python) {
+  const isWin = process.platform === 'win32'
+  const py = python || (isWin ? 'py' : 'python3')
+  const pkg = fs.existsSync(path.join(root, 'requirements.txt')) ? '-r requirements.txt' : 'mkdocs'
+  return isWin
+    ? `${py} -m venv .venv; .venv\\Scripts\\python -m pip install ${pkg}`
+    : `${py} -m venv .venv && .venv/bin/pip install ${pkg}`
+}
+
+/**
+ * Vérifie que MkDocs (et, à défaut, Python) est disponible avant de démarrer le
+ * serveur. Affiche un message clair et actionnable, adapté à Windows/Linux/Mac,
+ * et renvoie { ok: false } si quelque chose manque.
+ */
+async function preflight(root) {
+  const isWin = process.platform === 'win32'
+  const cmd = resolveMkdocsCmd(root)
+  // Un chemin (venv ou réglage explicite) se teste sans shell ; une commande du
+  // PATH a parfois besoin du shell sous Windows (.cmd/.bat).
+  const cmdIsPath = cmd.includes('/') || cmd.includes('\\')
+  if (await canRun(cmd, ['--version'], cmdIsPath ? false : isWin)) return { ok: true }
+
+  // MkDocs introuvable : Python est-il présent ?
+  const pyCandidates = isWin ? ['py', 'python', 'python3'] : ['python3', 'python']
+  let python = null
+  for (const p of pyCandidates) {
+    if (await canRun(p, ['--version'], isWin)) {
+      python = p
+      break
+    }
+  }
+
+  if (!python) {
+    const hint = isWin
+      ? vscode.l10n.t('Install Python from https://www.python.org/downloads/ (or run "winget install Python.Python.3").')
+      : process.platform === 'darwin'
+        ? vscode.l10n.t('Install Python with "brew install python", or from https://www.python.org/downloads/.')
+        : vscode.l10n.t('Install Python with your package manager, e.g. "sudo apt install python3 python3-venv".')
+    const guide = vscode.l10n.t('Installation guide')
+    const choice = await vscode.window.showErrorMessage(
+      vscode.l10n.t('Python 3 was not found, but MkDocs needs it. {0}', hint),
+      guide
+    )
+    if (choice === guide) {
+      vscode.env.openExternal(vscode.Uri.parse('https://www.python.org/downloads/'))
+    }
+    return { ok: false }
+  }
+
+  // Python présent mais MkDocs absent : proposer une commande d'installation.
+  const installCmd = suggestedInstallCommand(root, python)
+  const copy = vscode.l10n.t('Copy install command')
+  const guide = vscode.l10n.t('Installation guide')
+  const choice = await vscode.window.showErrorMessage(
+    vscode.l10n.t('MkDocs was not found. Install it in a virtual environment, then try again.'),
+    copy,
+    guide
+  )
+  if (choice === copy) {
+    await vscode.env.clipboard.writeText(installCmd)
+    vscode.window.showInformationMessage(vscode.l10n.t('Install command copied to the clipboard.'))
+  } else if (choice === guide) {
+    vscode.env.openExternal(vscode.Uri.parse('https://www.mkdocs.org/user-guide/installation/'))
+  }
+  return { ok: false }
+}
+
 /**
  * Garantit qu'un serveur sert bien le projet du dossier courant.
  * Redémarre si on a changé de projet, démarre si aucun n'est géré, et avertit
@@ -257,6 +353,8 @@ async function ensureServer() {
     )
     return true
   }
+  // Vérifie que MkDocs/Python sont installés avant de tenter le démarrage.
+  if (!(await preflight(root)).ok) return false
   startServer()
   return true
 }
