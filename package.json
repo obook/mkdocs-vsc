@@ -34,8 +34,8 @@
         "command": "mkdocsLivePreview.openPreviewToSide",
         "title": "MkDocs: Open Live Preview to the Side",
         "icon": {
-          "light": "media/mkdocs.svg",
-          "dark": "media/mkdocs.svg"
+          "light": "media/mkdocs.png",
+          "dark": "media/mkdocs.png"
         }
       },
       {
