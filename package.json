@@ -1,7 +1,7 @@
 {
   "name": "mkdocs-live-preview",
   "displayName": "MkDocs Live Preview",
-  "description": "Live preview of an MkDocs site inside VS Code, with one-click mkdocs serve, file-to-page sync, and admonition snippets.",
+  "description": "%ext.description%",
   "version": "0.1.0",
   "publisher": "obook",
   "license": "MIT",
@@ -25,6 +25,7 @@
     "Other"
   ],
   "main": "./extension.js",
+  "l10n": "./l10n",
   "activationEvents": [
     "onLanguage:markdown"
   ],
@@ -32,7 +33,7 @@
     "commands": [
       {
         "command": "mkdocsLivePreview.openPreviewToSide",
-        "title": "MkDocs: Open Live Preview to the Side",
+        "title": "%cmd.openToSide.title%",
         "icon": {
           "light": "media/mkdocs-light.png",
           "dark": "media/mkdocs-dark.png"
@@ -40,19 +41,19 @@
       },
       {
         "command": "mkdocsLivePreview.openPreview",
-        "title": "MkDocs: Open Live Preview"
+        "title": "%cmd.open.title%"
       },
       {
         "command": "mkdocsLivePreview.startServer",
-        "title": "MkDocs: Start Server"
+        "title": "%cmd.start.title%"
       },
       {
         "command": "mkdocsLivePreview.stopServer",
-        "title": "MkDocs: Stop Server"
+        "title": "%cmd.stop.title%"
       },
       {
         "command": "mkdocsLivePreview.restartServer",
-        "title": "MkDocs: Restart Server"
+        "title": "%cmd.restart.title%"
       }
     ],
     "menus": {
@@ -72,32 +73,32 @@
       }
     ],
     "configuration": {
-      "title": "MkDocs Live Preview",
+      "title": "%config.title%",
       "properties": {
         "mkdocsLivePreview.host": {
           "type": "string",
           "default": "127.0.0.1",
-          "description": "Host the mkdocs dev server binds to."
+          "description": "%config.host.desc%"
         },
         "mkdocsLivePreview.port": {
           "type": "number",
           "default": 9999,
-          "description": "Port the mkdocs dev server listens on."
+          "description": "%config.port.desc%"
         },
         "mkdocsLivePreview.mkdocsPath": {
           "type": "string",
           "default": "",
-          "description": "Path to the mkdocs executable. Leave empty to auto-detect the workspace .venv, then fall back to 'mkdocs' on PATH."
+          "description": "%config.mkdocsPath.desc%"
         },
         "mkdocsLivePreview.configFile": {
           "type": "string",
           "default": "mkdocs.yml",
-          "description": "MkDocs config file, relative to the workspace root."
+          "description": "%config.configFile.desc%"
         },
         "mkdocsLivePreview.autoSync": {
           "type": "boolean",
           "default": true,
-          "description": "Follow the active editor: navigate the preview to the page of the current Markdown file."
+          "description": "%config.autoSync.desc%"
         },
         "mkdocsLivePreview.serveArgs": {
           "type": "array",
@@ -107,7 +108,7 @@
           "default": [
             "--livereload"
           ],
-          "description": "Extra arguments passed to 'mkdocs serve'."
+          "description": "%config.serveArgs.desc%"
         }
       }
     },

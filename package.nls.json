@@ -1,0 +1,15 @@
+{
+  "ext.description": "Live preview of an MkDocs site inside VS Code, with one-click mkdocs serve, file-to-page sync, and admonition snippets.",
+  "cmd.openToSide.title": "MkDocs: Open Live Preview to the Side",
+  "cmd.open.title": "MkDocs: Open Live Preview",
+  "cmd.start.title": "MkDocs: Start Server",
+  "cmd.stop.title": "MkDocs: Stop Server",
+  "cmd.restart.title": "MkDocs: Restart Server",
+  "config.title": "MkDocs Live Preview",
+  "config.host.desc": "Host the mkdocs dev server binds to.",
+  "config.port.desc": "Port the mkdocs dev server listens on.",
+  "config.mkdocsPath.desc": "Path to the mkdocs executable. Leave empty to auto-detect the workspace .venv, then fall back to 'mkdocs' on PATH.",
+  "config.configFile.desc": "MkDocs config file, relative to the workspace root.",
+  "config.autoSync.desc": "Follow the active editor: navigate the preview to the page of the current Markdown file.",
+  "config.serveArgs.desc": "Extra arguments passed to 'mkdocs serve'."
+}

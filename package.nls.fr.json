@@ -1,0 +1,15 @@
+{
+  "ext.description": "Aperçu en direct d'un site MkDocs dans VS Code : lancement de mkdocs serve en un clic, synchronisation fichier-page et snippets d'admonitions.",
+  "cmd.openToSide.title": "MkDocs : ouvrir l'aperçu à côté",
+  "cmd.open.title": "MkDocs : ouvrir l'aperçu",
+  "cmd.start.title": "MkDocs : démarrer le serveur",
+  "cmd.stop.title": "MkDocs : arrêter le serveur",
+  "cmd.restart.title": "MkDocs : redémarrer le serveur",
+  "config.title": "MkDocs Live Preview",
+  "config.host.desc": "Hôte sur lequel le serveur de développement mkdocs écoute.",
+  "config.port.desc": "Port d'écoute du serveur de développement mkdocs.",
+  "config.mkdocsPath.desc": "Chemin de l'exécutable mkdocs. Laisser vide pour détecter automatiquement le .venv du projet, puis se rabattre sur 'mkdocs' du PATH.",
+  "config.configFile.desc": "Fichier de configuration MkDocs, relatif à la racine de l'espace de travail.",
+  "config.autoSync.desc": "Suivre l'éditeur actif : amener l'aperçu sur la page du fichier Markdown courant.",
+  "config.serveArgs.desc": "Arguments supplémentaires passés à 'mkdocs serve'."
+}

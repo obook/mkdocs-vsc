@@ -108,10 +108,10 @@ function pagePathForFile(filePath) {
 function updateStatus() {
   if (!statusItem) return
   const running = !!serverProc
-  statusItem.text = running ? '$(book) MkDocs: actif' : '$(book) MkDocs: arrêté'
+  statusItem.text = `$(book) ${running ? vscode.l10n.t('MkDocs: running') : vscode.l10n.t('MkDocs: stopped')}`
   statusItem.tooltip = running
-    ? 'Serveur mkdocs en cours - cliquer pour ouvrir l\'aperçu'
-    : 'Serveur mkdocs arrêté - cliquer pour démarrer et ouvrir l\'aperçu'
+    ? vscode.l10n.t('MkDocs server running - click to open the preview')
+    : vscode.l10n.t('MkDocs server stopped - click to start it and open the preview')
   statusItem.show()
 }
 
@@ -119,12 +119,15 @@ function startServer() {
   const root = findProjectRoot()
   if (!root) {
     vscode.window.showErrorMessage(
-      `MkDocs Live Preview : aucun ${config().get('configFile')} trouvé (ni dans le dossier ouvert, ni au-dessus du fichier actif).`
+      vscode.l10n.t(
+        'MkDocs Live Preview: no {0} found (neither in the open folder nor above the active file).',
+        config().get('configFile')
+      )
     )
     return
   }
   if (serverProc) {
-    output.appendLine('Le serveur tourne déjà.')
+    output.appendLine('Server already running.')
     return
   }
   const cfg = config()
@@ -148,17 +151,21 @@ function startServer() {
     output.append(text)
     if (/address already in use|errno 98/i.test(text)) {
       vscode.window.showErrorMessage(
-        `MkDocs : le port ${port} est déjà occupé. Arrêtez l'autre serveur ou changez "mkdocsLivePreview.port".`
+        vscode.l10n.t(
+          'MkDocs: port {0} is already in use. Stop the other server or change "mkdocsLivePreview.port".',
+          port
+        )
       )
     }
   })
   serverProc.on('exit', (code) => {
-    output.appendLine(`\n[mkdocs serve terminé : code ${code}]`)
+    output.appendLine(`\n[mkdocs serve exited: code ${code}]`)
     serverProc = null
+    serverRoot = null
     updateStatus()
   })
   serverProc.on('error', (err) => {
-    vscode.window.showErrorMessage(`MkDocs : ${err.message}`)
+    vscode.window.showErrorMessage(vscode.l10n.t('MkDocs: {0}', err.message))
     serverProc = null
     updateStatus()
   })
@@ -224,7 +231,10 @@ async function ensureServer() {
   if (!root) {
     stopServer()
     vscode.window.showWarningMessage(
-      `MkDocs Live Preview : aucun ${config().get('configFile')} trouvé (ni dans le dossier ouvert, ni au-dessus du fichier actif).`
+      vscode.l10n.t(
+        'MkDocs Live Preview: no {0} found (neither in the open folder nor above the active file).',
+        config().get('configFile')
+      )
     )
     return false
   }
@@ -240,8 +250,10 @@ async function ensureServer() {
   const cfg = config()
   if (await isPortOpen(cfg.get('host'), cfg.get('port'))) {
     vscode.window.showWarningMessage(
-      `Le port ${cfg.get('port')} est déjà utilisé. L'aperçu pourrait afficher un autre projet. ` +
-        `Arrêtez ce serveur ou changez "mkdocsLivePreview.port".`
+      vscode.l10n.t(
+        'Port {0} is already in use. The preview may show another project. Stop that server or change "mkdocsLivePreview.port".',
+        cfg.get('port')
+      )
     )
     return true
   }
@@ -259,7 +271,7 @@ async function ensureExternalBase() {
   return externalBase
 }
 
-function webviewHtml(origin) {
+function webviewHtml(origin, startingText) {
   // CSP stricte : on n'autorise que l'iframe vers l'origine du serveur mkdocs.
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -287,7 +299,7 @@ function webviewHtml(origin) {
 </style>
 </head>
 <body>
-<div id="overlay"><div class="spinner"></div><div id="overlay-text">Démarrage du serveur MkDocs…</div></div>
+<div id="overlay"><div class="spinner"></div><div id="overlay-text">${startingText}</div></div>
 <iframe id="frame"></iframe>
 <script>
   const frame = document.getElementById('frame')
@@ -335,19 +347,22 @@ async function openPreview(toSide) {
     previewPanel.onDidDispose(() => {
       previewPanel = null
     })
-    previewPanel.webview.html = webviewHtml(origin)
+    previewPanel.webview.html = webviewHtml(origin, vscode.l10n.t('Starting the MkDocs server…'))
   } else {
     previewPanel.reveal(toSide ? vscode.ViewColumn.Beside : undefined, true)
   }
   // Le build initial de mkdocs prend quelques secondes : on attend que le
   // serveur réponde avant de charger la page, sinon l'iframe affiche une page
   // blanche (connexion refusée) sans réessayer.
-  previewPanel.webview.postMessage({ type: 'status', text: 'Démarrage du serveur MkDocs…' })
+  previewPanel.webview.postMessage({
+    type: 'status',
+    text: vscode.l10n.t('Starting the MkDocs server…')
+  })
   const ready = await waitForServer()
   if (!ready) {
     previewPanel.webview.postMessage({
       type: 'status',
-      text: 'Le serveur MkDocs ne répond pas. Voir la sortie « MkDocs Live Preview ».'
+      text: vscode.l10n.t('The MkDocs server is not responding. See the "MkDocs Live Preview" output.')
     })
     return
   }
