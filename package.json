@@ -26,6 +26,9 @@
   ],
   "main": "./extension.js",
   "l10n": "./l10n",
+  "scripts": {
+    "test": "node --test"
+  },
   "activationEvents": [
     "onLanguage:markdown"
   ],
