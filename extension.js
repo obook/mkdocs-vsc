@@ -271,18 +271,28 @@ function webviewHtml(origin) {
   html, body { margin: 0; padding: 0; height: 100%; background: #fff; }
   iframe { width: 100%; height: 100vh; border: 0; background: #fff; }
   #overlay {
-    position: fixed; inset: 0; display: flex; align-items: center;
-    justify-content: center; padding: 1rem; text-align: center;
+    position: fixed; inset: 0; display: flex; flex-direction: column; gap: 14px;
+    align-items: center; justify-content: center; padding: 1rem; text-align: center;
     font-family: sans-serif; font-size: 13px; color: #888; background: #fff;
+  }
+  #overlay .spinner {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 3px solid currentColor; border-top-color: transparent;
+    opacity: 0.55; animation: mk-spin 0.9s linear infinite;
+  }
+  @keyframes mk-spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) {
+    #overlay .spinner { animation-duration: 2.4s; }
   }
 </style>
 </head>
 <body>
-<div id="overlay">Démarrage du serveur MkDocs…</div>
+<div id="overlay"><div class="spinner"></div><div id="overlay-text">Démarrage du serveur MkDocs…</div></div>
 <iframe id="frame"></iframe>
 <script>
   const frame = document.getElementById('frame')
   const overlay = document.getElementById('overlay')
+  const overlayText = document.getElementById('overlay-text')
   frame.addEventListener('load', () => { if (frame.src) overlay.style.display = 'none' })
   window.addEventListener('message', (event) => {
     const msg = event.data
@@ -291,7 +301,7 @@ function webviewHtml(origin) {
       overlay.style.display = 'none'
       frame.src = msg.url
     } else if (msg.type === 'status' && typeof msg.text === 'string') {
-      overlay.textContent = msg.text
+      overlayText.textContent = msg.text
       overlay.style.display = 'flex'
     }
   })
