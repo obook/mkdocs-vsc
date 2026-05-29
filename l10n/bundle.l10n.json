@@ -16,5 +16,6 @@
   "MkDocs was not found. Install it in a virtual environment, then try again.": "MkDocs was not found. Install it in a virtual environment, then try again.",
   "Copy install command": "Copy install command",
   "Installation guide": "Installation guide",
-  "Install command copied to the clipboard.": "Install command copied to the clipboard."
+  "Install command copied to the clipboard.": "Install command copied to the clipboard.",
+  "MkDocs Preview": "MkDocs Preview"
 }

@@ -2,51 +2,51 @@
   "Admonition": {
     "prefix": "!!!",
     "body": [
-      "!!! ${1|note,info,tip,success,question,warning,danger,example,quote,propriete,definition,methode,remarque|} \"${2:Titre}\"",
+      "!!! ${1|note,info,tip,success,question,warning,danger,example,quote,propriete,definition,methode,remarque|} \"${2:Title}\"",
       "",
-      "    ${0:Contenu de l'admonition}"
+      "    ${0:Admonition content}"
     ],
-    "description": "Bloc admonition MkDocs (Material / pymdownx)"
+    "description": "MkDocs admonition (Material / pymdownx)"
   },
-  "Admonition repliable": {
+  "Collapsible admonition": {
     "prefix": "???",
     "body": [
-      "???${1|+,|} ${2|note,info,tip,warning,danger,example,question,propriete,definition|} \"${3:Titre}\"",
+      "???${1|+,|} ${2|note,info,tip,warning,danger,example,question,propriete,definition|} \"${3:Title}\"",
       "",
-      "    ${0:Contenu repliable}"
+      "    ${0:Collapsible content}"
     ],
-    "description": "Admonition repliable (??? = fermée, ???+ = ouverte)"
+    "description": "Collapsible admonition (??? closed, ???+ open)"
   },
-  "Bloc mathématique": {
+  "Math block": {
     "prefix": "math",
     "body": [
       "$$",
       "${0}",
       "$$"
     ],
-    "description": "Bloc mathématique (arithmatex)"
+    "description": "Math block (arithmatex)"
   },
-  "Onglets": {
+  "Content tabs": {
     "prefix": "===",
     "body": [
-      "=== \"${1:Onglet 1}\"",
+      "=== \"${1:Tab 1}\"",
       "",
-      "    ${2:Contenu}",
+      "    ${2:Content}",
       "",
-      "=== \"${3:Onglet 2}\"",
+      "=== \"${3:Tab 2}\"",
       "",
-      "    ${0:Contenu}"
+      "    ${0:Content}"
     ],
-    "description": "Volets glissants (pymdownx.tabbed)"
+    "description": "Content tabs (pymdownx.tabbed)"
   },
-  "Légende d'image": {
+  "Captioned image": {
     "prefix": "fig",
     "body": [
-      "![${1:texte alternatif}](${2:chemin}){${3:.center}}",
+      "![${1:alt text}](${2:path}){${3:.center}}",
       "/// caption",
-      "${0:Légende}",
+      "${0:Caption}",
       "///"
     ],
-    "description": "Image avec légende (pymdownx.blocks.caption)"
+    "description": "Image with caption (pymdownx.blocks.caption)"
   }
 }

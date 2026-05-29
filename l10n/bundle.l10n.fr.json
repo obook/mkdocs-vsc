@@ -16,5 +16,6 @@
   "MkDocs was not found. Install it in a virtual environment, then try again.": "MkDocs est introuvable. Installez-le dans un environnement virtuel, puis réessayez.",
   "Copy install command": "Copier la commande d'installation",
   "Installation guide": "Guide d'installation",
-  "Install command copied to the clipboard.": "Commande d'installation copiée dans le presse-papiers."
+  "Install command copied to the clipboard.": "Commande d'installation copiée dans le presse-papiers.",
+  "MkDocs Preview": "Aperçu MkDocs"
 }
