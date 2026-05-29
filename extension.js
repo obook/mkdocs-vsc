@@ -10,6 +10,8 @@ const path = require('path')
 
 /** Processus du serveur mkdocs (null si arrêté). @type {import('child_process').ChildProcess | null} */
 let serverProc = null
+/** Racine du projet pour lequel le serveur courant a été démarré. */
+let serverRoot = null
 /** Panneau d'aperçu (null si fermé). @type {vscode.WebviewPanel | null} */
 let previewPanel = null
 /** Origine externe du serveur (ex. http://127.0.0.1:9999), résolue via asExternalUri. */
@@ -109,12 +111,21 @@ function startServer() {
 
   output.show(true)
   output.appendLine(`$ ${cmd} ${args.join(' ')}   (cwd=${root})`)
+  serverRoot = root
   serverProc = cp.spawn(cmd, args, {
     cwd: root,
     env: { ...process.env, NO_MKDOCS_2_WARNING: '1' }
   })
   serverProc.stdout.on('data', (d) => output.append(d.toString()))
-  serverProc.stderr.on('data', (d) => output.append(d.toString()))
+  serverProc.stderr.on('data', (d) => {
+    const text = d.toString()
+    output.append(text)
+    if (/address already in use|errno 98/i.test(text)) {
+      vscode.window.showErrorMessage(
+        `MkDocs : le port ${port} est déjà occupé. Arrêtez l'autre serveur ou changez "mkdocsLivePreview.port".`
+      )
+    }
+  })
   serverProc.on('exit', (code) => {
     output.appendLine(`\n[mkdocs serve terminé : code ${code}]`)
     serverProc = null
@@ -132,8 +143,14 @@ function stopServer() {
   if (serverProc) {
     serverProc.kill()
     serverProc = null
+    serverRoot = null
     updateStatus()
   }
+}
+
+/** Le dossier contient-il le fichier de config MkDocs ? */
+function hasMkdocsConfig(root) {
+  return fs.existsSync(path.join(root, config().get('configFile')))
 }
 
 async function restartServer() {
@@ -163,20 +180,43 @@ function isPortOpen(host, port, timeout = 600) {
 }
 
 /**
- * Garantit qu'un serveur est disponible : ne fait rien si on en gère déjà un,
- * réutilise un serveur déjà à l'écoute (ex. lancé à la main via localhost.py),
- * sinon démarre le nôtre.
+ * Garantit qu'un serveur sert bien le projet du dossier courant.
+ * Redémarre si on a changé de projet, démarre si aucun n'est géré, et avertit
+ * si le port est occupé par un serveur étranger (pour éviter d'afficher un
+ * autre projet). Renvoie false si le dossier courant n'est pas un projet MkDocs.
  */
 async function ensureServer() {
-  if (serverProc) return
+  const root = workspaceRoot()
+  if (!root) {
+    vscode.window.showErrorMessage('MkDocs Live Preview : ouvrez d\'abord le dossier du projet.')
+    return false
+  }
+  if (!hasMkdocsConfig(root)) {
+    stopServer()
+    vscode.window.showWarningMessage(
+      `MkDocs Live Preview : aucun ${config().get('configFile')} dans ce dossier.`
+    )
+    return false
+  }
+  // Serveur déjà en cours pour CE projet : rien à faire.
+  if (serverProc && serverRoot === root) return true
+  // Serveur en cours pour un AUTRE projet : on le remplace.
+  if (serverProc && serverRoot !== root) {
+    stopServer()
+    await new Promise((r) => setTimeout(r, 400))
+  }
+  // Port occupé par un serveur qu'on ne gère pas : on prévient plutôt que de
+  // réutiliser aveuglément (il pourrait servir un autre projet).
   const cfg = config()
   if (await isPortOpen(cfg.get('host'), cfg.get('port'))) {
-    output.appendLine(
-      `Un serveur écoute déjà sur ${cfg.get('host')}:${cfg.get('port')} - réutilisé tel quel.`
+    vscode.window.showWarningMessage(
+      `Le port ${cfg.get('port')} est déjà utilisé. L'aperçu pourrait afficher un autre projet. ` +
+        `Arrêtez ce serveur ou changez "mkdocsLivePreview.port".`
     )
-    return
+    return true
   }
   startServer()
+  return true
 }
 
 /** Résout l'origine externe (gère le forwarding de port en remote/Codespaces). */
@@ -228,7 +268,7 @@ function navigateToActive() {
 }
 
 async function openPreview(toSide) {
-  await ensureServer()
+  if (!(await ensureServer())) return
   const origin = await ensureExternalBase()
 
   if (!previewPanel) {
@@ -265,6 +305,13 @@ function activate(context) {
     vscode.commands.registerCommand('mkdocsLivePreview.restartServer', restartServer),
     vscode.window.onDidChangeActiveTextEditor(() => {
       if (config().get('autoSync')) navigateToActive()
+    }),
+    // Changement de projet (ajout/retrait de dossier) : on resservira le bon
+    // projet au prochain rendu si un aperçu est ouvert.
+    vscode.workspace.onDidChangeWorkspaceFolders(async () => {
+      if (previewPanel && (await ensureServer())) {
+        setTimeout(navigateToActive, 300)
+      }
     })
   )
 }
