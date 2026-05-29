@@ -8,11 +8,15 @@ Unlike a generic Markdown preview, the rendering is produced by the **real
 blocks (pyodide) appear exactly as they do in production. MkDocs livereload
 refreshes the preview on every save.
 
+![MkDocs Live Preview in VS Code: the Markdown source on the left, the rendered MkDocs page on the right.](media/screen.png)
+
 ## How it works
 
 The extension embeds `mkdocs serve` in an iframe (a webview panel). It does not
 touch the editor: you edit the Markdown source as usual, and the panel on the
 side shows the faithful rendering.
+
+See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the internal design.
 
 ## Requirements
 
@@ -58,8 +62,10 @@ A status bar item shows the server state; clicking it opens the preview.
 | `mkdocsLivePreview.serveArgs` | `["--livereload"]` | Extra arguments passed to `mkdocs serve` |
 
 The file-to-page mapping honors `docs_dir` and `use_directory_urls` as read
-from `mkdocs.yml`. If a server is already running on the configured
-host and port, the extension reuses it instead of starting a second one.
+from `mkdocs.yml`. The extension serves the project of the active file and
+restarts the server when you switch projects. If a server is already running on
+the configured host and port, it does not start a second one; it warns you,
+since that server might belong to another project.
 
 ## Snippets
 
@@ -76,6 +82,29 @@ This produces `dist/mkdocs-live-preview-<version>.vsix`, which you can install
 with `code --install-extension <file>.vsix` or through *Extensions: Install
 from VSIX...*.
 
+## Security, privacy and accessibility
+
+- [`SECURITY.md`](SECURITY.md) - security assessment (ANSSI secure development guide).
+- [`GDPR.md`](GDPR.md) - privacy assessment (GDPR): no data collected, no telemetry.
+- [`ACCESSIBILITY.md`](ACCESSIBILITY.md) - accessibility statement (RGAA 4.x).
+
+## Tools and licenses
+
+This extension has **no runtime npm dependencies**; it uses only the VS Code API
+and Node.js built-in modules. It builds on:
+
+- [MkDocs](https://www.mkdocs.org/) - the documentation server it drives;
+  BSD-2-Clause ([repository](https://github.com/mkdocs/mkdocs)).
+- [VS Code extension API](https://code.visualstudio.com/api) - the host
+  platform (Microsoft).
+- [Node.js](https://nodejs.org/) - built-in modules only, provided by the
+  VS Code runtime.
+- [@vscode/vsce](https://github.com/microsoft/vscode-vsce) - development only,
+  used by `build.sh` to package the `.vsix`; MIT.
+
+The editor-title icon is derived from the MkDocs project favicon; "MkDocs" and
+its logo belong to the MkDocs project.
+
 ## License
 
-MIT.
+This extension is released under the MIT License. See [`LICENSE`](LICENSE).
