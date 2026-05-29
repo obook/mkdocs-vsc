@@ -20,7 +20,10 @@
       {
         "command": "mkdocsLivePreview.openPreviewToSide",
         "title": "MkDocs: Open Live Preview to the Side",
-        "icon": "$(open-preview)"
+        "icon": {
+          "light": "media/mkdocs.svg",
+          "dark": "media/mkdocs.svg"
+        }
       },
       {
         "command": "mkdocsLivePreview.openPreview",
