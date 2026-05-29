@@ -4,9 +4,9 @@ Planned improvements for MkDocs Live Preview. Checked items are done.
 
 ## Distribution and CI
 
-- [ ] Continuous integration (GitHub Actions): run `npm test` and `vsce package` on push and on tags.
+- [x] Continuous integration (GitHub Actions): run `npm test` and `vsce package` on push and on tags.
 - [ ] Publish to the VS Code Marketplace and Open VSX (publisher account, 128x128 extension icon, `vscode:prepublish` script).
-- [ ] Compress `media/screen.png` to shrink the packaged `.vsix`.
+- [x] Compress `media/screen.png` to shrink the packaged `.vsix`.
 
 ## Features and UX
 
