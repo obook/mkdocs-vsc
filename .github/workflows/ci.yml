@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # The extension has no runtime dependencies, so there is nothing to
+      # install: the unit tests run on the built-in Node test runner.
+      - name: Run unit tests
+        run: npm test
+
+      - name: Package the extension
+        run: npx --yes @vscode/vsce package --out mkdocs-live-preview.vsix
+
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix
+          path: mkdocs-live-preview.vsix
