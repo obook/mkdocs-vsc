@@ -29,4 +29,37 @@ function clampReadyTimeoutMs(rawSeconds, defaultMs, minMs) {
   return Math.max(minMs, Math.round(raw * 1000));
 }
 
-module.exports = { clampReadyTimeoutMs };
+/**
+ * Polls `isReady` until it returns true, the optional `isAborted` predicate
+ * returns true, or `timeoutMs` elapses. Pure helper (no VS Code dependency)
+ * so the readiness logic can be unit-tested.
+ *
+ * @param {object} opts
+ * @param {() => Promise<boolean>} opts.isReady - Predicate called every poll;
+ *        resolving to true ends the wait with success.
+ * @param {() => boolean} [opts.isAborted] - Optional synchronous predicate
+ *        checked before each poll; returning true ends the wait with failure
+ *        (e.g. the spawned server has already exited).
+ * @param {number} opts.timeoutMs - Maximum wait duration.
+ * @param {number} [opts.intervalMs] - Delay between polls. Defaults to 400 ms.
+ * @returns {Promise<boolean>} True if `isReady` resolved to true within the
+ *          budget, false on abort or timeout.
+ */
+async function pollUntilReady(opts) {
+  const { isReady, timeoutMs } = opts;
+  const isAborted = opts.isAborted || (() => false);
+  const intervalMs = opts.intervalMs || 400;
+  const startTime = Date.now();
+  while (Date.now() - startTime < timeoutMs) {
+    if (isAborted()) {
+      return false;
+    }
+    if (await isReady()) {
+      return true;
+    }
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+  return false;
+}
+
+module.exports = { clampReadyTimeoutMs, pollUntilReady };

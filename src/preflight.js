@@ -49,13 +49,19 @@ function canRun(cmd, args) {
         shell: shouldUseShell(cmd, process.platform)
       });
       child.on('error', () => finish(false)); /* Binary not found. */
-      child.on('exit', () => finish(true)); /* Ran, whatever the exit code. */
+      /* Under `shell: true` on Windows, cmd.exe always spawns successfully
+         even when the requested command is missing; only the exit code (1)
+         signals that. We therefore consider the probe successful only when
+         the process exits with code 0. */
+      child.on('exit', (code) => finish(code === 0));
       setTimeout(() => {
         try {
           child.kill();
         } catch {
           /* Ignore: the child may already be gone. */
         }
+        /* Probe hit the timeout: the binary is long-running but does exist
+           (we successfully spawned it). Treat as found. */
         finish(true);
       }, PROBE_TIMEOUT_MS);
     } catch {

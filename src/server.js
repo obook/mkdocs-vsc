@@ -18,7 +18,7 @@ const net = require('net');
 const { getConfig } = require('./config');
 const { findProjectRoot, resolveMkdocsCmd } = require('./project');
 const { preflight } = require('./preflight');
-const { clampReadyTimeoutMs } = require('./timeout');
+const { clampReadyTimeoutMs, pollUntilReady } = require('./timeout');
 const { shouldUseShell } = require('./spawn');
 
 /** Running server process, or null when stopped. @type {import('child_process').ChildProcess | null} */
@@ -36,16 +36,6 @@ const DEFAULT_READY_TIMEOUT_MS = 120000;
 const MIN_READY_TIMEOUT_MS = 5000;
 /** How long (ms) to wait for a killed process to report its exit. */
 const STOP_TIMEOUT_MS = 3000;
-
-/**
- * Resolves after the given delay.
- *
- * @param {number} ms - Milliseconds to wait.
- * @returns {Promise<void>}
- */
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 /**
  * Initializes the module by creating the output channel.
@@ -237,25 +227,25 @@ function getReadyTimeoutMs() {
 /**
  * Waits for the server to answer. The initial build can take from a few
  * seconds (small sites) to over a minute (large sites with heavy themes such
- * as pyodide-mkdocs-theme), hence the configurable timeout.
+ * as pyodide-mkdocs-theme), hence the configurable timeout. Returns early if
+ * the server process exits in the meantime, so the preview can surface the
+ * failure immediately instead of waiting out the full ready timeout.
  *
  * @param {number} [timeoutMs] - Maximum time to wait (ms). Defaults to the
  *        configured `readyTimeout`.
- * @returns {Promise<boolean>} True once the port answers, false on timeout.
+ * @returns {Promise<boolean>} True once the port answers, false on abort or
+ *          timeout.
  */
 async function waitForReady(timeoutMs) {
   const limit = typeof timeoutMs === 'number' ? timeoutMs : getReadyTimeoutMs();
   const cfg = getConfig();
   const host = cfg.get('host');
   const port = cfg.get('port');
-  const startTime = Date.now();
-  while (Date.now() - startTime < limit) {
-    if (await isPortOpen(host, port, 500)) {
-      return true;
-    }
-    await delay(400);
-  }
-  return false;
+  return pollUntilReady({
+    isReady: () => isPortOpen(host, port, 500),
+    isAborted: () => !serverProc,
+    timeoutMs: limit
+  });
 }
 
 /**
