@@ -11,5 +11,6 @@
   "config.mkdocsPath.desc": "Path to the mkdocs executable. Leave empty to auto-detect the workspace .venv, then fall back to 'mkdocs' on PATH.",
   "config.configFile.desc": "MkDocs config file, relative to the workspace root.",
   "config.autoSync.desc": "Follow the active editor: navigate the preview to the page of the current Markdown file.",
-  "config.serveArgs.desc": "Extra arguments passed to 'mkdocs serve'."
+  "config.serveArgs.desc": "Extra arguments passed to 'mkdocs serve'.",
+  "config.readyTimeout.desc": "Maximum time (in seconds) to wait for the MkDocs server to be ready after a start. Raise it on large sites with heavy themes where the first build is slow."
 }

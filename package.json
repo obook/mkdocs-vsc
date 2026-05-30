@@ -117,6 +117,12 @@
             "--livereload"
           ],
           "description": "%config.serveArgs.desc%"
+        },
+        "mkdocsLivePreview.readyTimeout": {
+          "type": "number",
+          "default": 120,
+          "minimum": 5,
+          "description": "%config.readyTimeout.desc%"
         }
       }
     },

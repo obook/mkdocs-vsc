@@ -28,8 +28,10 @@ let output = null;
 /** Listener invoked whenever the running state changes. */
 let onStateChange = () => {};
 
-/** How long (ms) to wait for the server to answer after a start. */
-const READY_TIMEOUT_MS = 20000;
+/** Default time (ms) to wait for the server to answer after a start. */
+const DEFAULT_READY_TIMEOUT_MS = 120000;
+/** Hard floor (ms) for the configured ready timeout. */
+const MIN_READY_TIMEOUT_MS = 5000;
 /** How long (ms) to wait for a killed process to report its exit. */
 const STOP_TIMEOUT_MS = 3000;
 
@@ -93,9 +95,12 @@ function start() {
 
   output.show(true);
   output.appendLine(`$ ${cmd} ${args.join(' ')}   (cwd=${root})`);
+  /* PYTHONUNBUFFERED=1 disables Python's stdout buffering so MkDocs' INFO lines
+     reach our output channel in real time, instead of arriving in a single
+     burst at the end of a slow build (very visible on Windows). */
   const proc = cp.spawn(cmd, args, {
     cwd: root,
-    env: { ...process.env, NO_MKDOCS_2_WARNING: '1' }
+    env: { ...process.env, NO_MKDOCS_2_WARNING: '1', PYTHONUNBUFFERED: '1' }
   });
   serverProc = proc;
   serverRoot = root;
@@ -196,17 +201,36 @@ function isPortOpen(host, port, timeout = 600) {
 }
 
 /**
- * Waits for the server to answer (the initial build takes a few seconds).
+ * Reads the configured ready timeout (in seconds) and returns it as a
+ * millisecond duration, clamped to a sensible minimum so a misconfigured value
+ * cannot reduce the wait below what an immediate first probe needs.
  *
- * @param {number} timeoutMs - Maximum time to wait (ms).
+ * @returns {number} Ready timeout in milliseconds.
+ */
+function getReadyTimeoutMs() {
+  const raw = Number(getConfig().get('readyTimeout'));
+  if (!Number.isFinite(raw) || raw <= 0) {
+    return DEFAULT_READY_TIMEOUT_MS;
+  }
+  return Math.max(MIN_READY_TIMEOUT_MS, Math.round(raw * 1000));
+}
+
+/**
+ * Waits for the server to answer. The initial build can take from a few
+ * seconds (small sites) to over a minute (large sites with heavy themes such
+ * as pyodide-mkdocs-theme), hence the configurable timeout.
+ *
+ * @param {number} [timeoutMs] - Maximum time to wait (ms). Defaults to the
+ *        configured `readyTimeout`.
  * @returns {Promise<boolean>} True once the port answers, false on timeout.
  */
-async function waitForReady(timeoutMs = READY_TIMEOUT_MS) {
+async function waitForReady(timeoutMs) {
+  const limit = typeof timeoutMs === 'number' ? timeoutMs : getReadyTimeoutMs();
   const cfg = getConfig();
   const host = cfg.get('host');
   const port = cfg.get('port');
   const startTime = Date.now();
-  while (Date.now() - startTime < timeoutMs) {
+  while (Date.now() - startTime < limit) {
     if (await isPortOpen(host, port, 500)) {
       return true;
     }
