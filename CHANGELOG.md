@@ -5,6 +5,29 @@ All notable changes to this extension are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2026-05-30
+
+### Fixed
+
+- Preflight no longer reports MkDocs as installed when it is not. On Windows
+  under `shell: true`, `cmd.exe` spawns successfully even when the requested
+  command does not exist (the missing binary only shows up as a non-zero
+  exit code), so the previous probe returned a false positive. The probe now
+  considers a non-zero exit as failure. Users with neither a `.venv` nor a
+  globally installed `mkdocs` see the actionable "MkDocs was not found"
+  dialog (with the ready-to-copy install command) instead of an infinite
+  "Starting the MkDocs server..." overlay.
+- Preview no longer stays on "Starting the MkDocs server..." for the full
+  ready timeout (120 s) when the server process exits early. `waitForReady`
+  now aborts as soon as the spawned process is gone, so the failure message
+  surfaces immediately.
+
+### Changed
+
+- Internal: extract the ready-polling loop into a pure `pollUntilReady`
+  helper in `src/timeout.js`, covered by unit tests (success, abort, timeout,
+  abort before first poll).
+
 ## [0.1.5] - 2026-05-30
 
 ### Fixed
@@ -95,6 +118,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Internationalization: English by default, with a complete French localization.
 - `build.sh` to produce an installable `.vsix` locally.
 
+[0.1.6]: https://github.com/obook/mkdocs-vsc/releases/tag/v0.1.6
 [0.1.5]: https://github.com/obook/mkdocs-vsc/releases/tag/v0.1.5
 [0.1.4]: https://github.com/obook/mkdocs-vsc/releases/tag/v0.1.4
 [0.1.3]: https://github.com/obook/mkdocs-vsc/releases/tag/v0.1.3
