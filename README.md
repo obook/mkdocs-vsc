@@ -10,6 +10,25 @@ refreshes the preview on every save.
 
 ![MkDocs Live Preview in VS Code: the Markdown source on the left, the rendered MkDocs page on the right.](media/screen.png)
 
+## Installation
+
+The extension is not on the VS Code Marketplace yet, so it is installed from a
+`.vsix` package.
+
+1. Get the package: download the latest `.vsix` from the
+   [Releases](https://github.com/obook/mkdocs-vsc/releases) page, or build it yourself with `./build.sh` (see
+   [Build an installable package](#build-an-installable-package)).
+2. Install it, in any of these ways:
+   - by drag and drop: drop the `.vsix` file directly onto the Extensions view;
+   - from VS Code: open the Extensions view, click the "..." menu, and choose
+     *Install from VSIX...*;
+   - from the command line:
+     `code --install-extension mkdocs-live-preview-<version>.vsix`.
+3. Reload VS Code if prompted.
+
+Check that the [requirements](#requirements) below are met. The extension also
+verifies them on startup and guides you if `mkdocs` or Python is missing.
+
 ## How it works
 
 The extension embeds `mkdocs serve` in an iframe (a webview panel). It does not
