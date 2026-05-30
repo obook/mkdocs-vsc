@@ -4,4 +4,5 @@ dist/**
 test/**
 build.sh
 jsconfig.json
+media/make_icon.py
 **/*.map

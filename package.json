@@ -5,6 +5,11 @@
   "version": "0.1.2",
   "publisher": "obook",
   "license": "MIT",
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#283593",
+    "theme": "dark"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/obook/mkdocs-vsc.git"
