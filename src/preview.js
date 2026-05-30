@@ -103,6 +103,25 @@ function webviewHtml(origin, startingText) {
 }
 
 /**
+ * Navigates the preview to the page of a given Markdown file.
+ *
+ * @param {string | null} filePath - Absolute path of the source file, or null.
+ * @param {boolean} force - When true (initial open), navigate to the site root
+ *        even if the file is not a page; otherwise leave the preview as is for
+ *        files outside the site.
+ */
+function navigateTo(filePath, force = false) {
+  if (!panel || !externalBase) {
+    return;
+  }
+  const page = filePath ? pagePathForFile(filePath) : null;
+  if (page === null && !force) {
+    return;
+  }
+  panel.webview.postMessage({ type: 'navigate', url: `${externalBase}/${page || ''}` });
+}
+
+/**
  * Navigates the preview to the page of the active Markdown file.
  *
  * @param {boolean} force - When true (initial open), navigate to the site root
@@ -110,15 +129,8 @@ function webviewHtml(origin, startingText) {
  *        is for files outside the site.
  */
 function navigateToActive(force = false) {
-  if (!panel || !externalBase) {
-    return;
-  }
   const editor = vscode.window.activeTextEditor;
-  const page = editor ? pagePathForFile(editor.document.uri.fsPath) : null;
-  if (page === null && !force) {
-    return;
-  }
-  panel.webview.postMessage({ type: 'navigate', url: `${externalBase}/${page || ''}` });
+  navigateTo(editor ? editor.document.uri.fsPath : null, force);
 }
 
 /**
@@ -127,6 +139,12 @@ function navigateToActive(force = false) {
  * @param {boolean} toSide - Open beside the editor rather than in place.
  */
 async function openPreview(toSide) {
+  /* Capture the source file now: creating the panel below moves the focus to
+     the webview, after which `activeTextEditor` no longer points at the open
+     Markdown file by the time the (possibly multi-second) server wait ends. */
+  const editor = vscode.window.activeTextEditor;
+  const sourcePath = editor ? editor.document.uri.fsPath : null;
+
   if (!(await server.ensure())) {
     return;
   }
@@ -162,7 +180,7 @@ async function openPreview(toSide) {
     });
     return;
   }
-  navigateToActive(true);
+  navigateTo(sourcePath, true);
 }
 
 /** @returns {boolean} Whether the preview panel is currently open. */

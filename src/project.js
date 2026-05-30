@@ -23,12 +23,16 @@ const MAX_CLIMB = 12;
 
 /**
  * Finds the MkDocs project root: the nearest folder containing the config
- * file, searched first by climbing from the active file, then from each
- * workspace folder. Handles opening a parent folder or a sub-folder.
+ * file, searched first by climbing from a given file (or the active file),
+ * then from each workspace folder. Handles opening a parent folder or a
+ * sub-folder.
  *
+ * @param {string} [fromPath] - Absolute file path to climb from. Defaults to
+ *        the active editor's file. Pass it explicitly when the active editor
+ *        cannot be trusted (e.g. the preview webview holds the focus).
  * @returns {string | undefined} The project root, or undefined if none found.
  */
-function findProjectRoot() {
+function findProjectRoot(fromPath) {
   const configFile = getConfig().get('configFile');
 
   /* Climb from `start` up to MAX_CLIMB parents looking for the config file. */
@@ -47,9 +51,15 @@ function findProjectRoot() {
     return undefined;
   }
 
-  const editor = vscode.window.activeTextEditor;
-  if (editor && editor.document.uri.scheme === 'file') {
-    const fromFile = climb(path.dirname(editor.document.uri.fsPath));
+  /* Prefer an explicit path, otherwise fall back to the active editor. */
+  const startFile =
+    fromPath ||
+    (vscode.window.activeTextEditor &&
+    vscode.window.activeTextEditor.document.uri.scheme === 'file'
+      ? vscode.window.activeTextEditor.document.uri.fsPath
+      : null);
+  if (startFile) {
+    const fromFile = climb(path.dirname(startFile));
     if (fromFile) {
       return fromFile;
     }
@@ -129,7 +139,7 @@ function readMkdocsConfig(root) {
  *          the file is not Markdown under docs_dir.
  */
 function pagePathForFile(filePath) {
-  const root = findProjectRoot();
+  const root = findProjectRoot(filePath);
   if (!root) {
     return null;
   }
