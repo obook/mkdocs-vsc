@@ -94,8 +94,8 @@ Available in Markdown files: `!!!` (admonition), `???` (collapsible admonition),
 ## Slow rebuilds on Windows
 
 On Windows, the first `mkdocs build` (when opening the preview) and the
-incremental rebuilds (on every save) can take many seconds — sometimes more
-than a minute on large sites — while the same project rebuilds in two or
+incremental rebuilds (on every save) can take many seconds - sometimes more
+than a minute on large sites - while the same project rebuilds in two or
 three seconds on Linux. Two main causes have been identified:
 
 1. **`on_post_build` hooks that are not incremental.** A hook that walks the
@@ -141,7 +141,7 @@ def on_post_build(config, **kwargs):
 ```
 
 This pattern preserves the hook's effect on production builds (the ones that
-feed your real deployment) and removes seconds — sometimes tens of seconds —
+feed your real deployment) and removes seconds (sometimes tens of seconds)
 from every save during editing. In one real project, this single change took
 the per-save rebuild from "insufferably long" to nearly instantaneous.
 
