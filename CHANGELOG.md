@@ -5,6 +5,25 @@ All notable changes to this extension are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - 2026-05-30
+
+### Fixed
+
+- Launch `mkdocs` through the shell on Windows when the resolved command is a
+  bare name (no `.venv` detected). Without this, Node spawned the literal
+  string `mkdocs` and failed with `ENOENT`, even when the preflight had just
+  confirmed that `mkdocs` was reachable via `PATHEXT`. Projects that rely on a
+  globally installed `mkdocs` now start correctly.
+
+### Changed
+
+- Make the spawn error message more actionable: when `mkdocs` cannot be
+  started, the error explains what to check (`.venv` or `PATH`) and offers an
+  `Open output` button that reveals the log channel.
+- Internal: factor the shell-mode decision into a pure `shouldUseShell`
+  helper, shared by `server.start` and `preflight.canRun`, and covered by
+  unit tests.
+
 ## [0.1.4] - 2026-05-30
 
 ### Fixed
@@ -76,6 +95,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Internationalization: English by default, with a complete French localization.
 - `build.sh` to produce an installable `.vsix` locally.
 
+[0.1.5]: https://github.com/obook/mkdocs-vsc/releases/tag/v0.1.5
 [0.1.4]: https://github.com/obook/mkdocs-vsc/releases/tag/v0.1.4
 [0.1.3]: https://github.com/obook/mkdocs-vsc/releases/tag/v0.1.3
 [0.1.2]: https://github.com/obook/mkdocs-vsc/releases/tag/v0.1.2
