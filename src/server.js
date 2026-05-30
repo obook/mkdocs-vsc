@@ -18,6 +18,7 @@ const net = require('net');
 const { getConfig } = require('./config');
 const { findProjectRoot, resolveMkdocsCmd } = require('./project');
 const { preflight } = require('./preflight');
+const { clampReadyTimeoutMs } = require('./timeout');
 
 /** Running server process, or null when stopped. @type {import('child_process').ChildProcess | null} */
 let serverProc = null;
@@ -202,17 +203,17 @@ function isPortOpen(host, port, timeout = 600) {
 
 /**
  * Reads the configured ready timeout (in seconds) and returns it as a
- * millisecond duration, clamped to a sensible minimum so a misconfigured value
- * cannot reduce the wait below what an immediate first probe needs.
+ * millisecond duration. Thin wrapper around the pure `clampReadyTimeoutMs`
+ * so the VS Code dependency stays on this side of the boundary.
  *
  * @returns {number} Ready timeout in milliseconds.
  */
 function getReadyTimeoutMs() {
-  const raw = Number(getConfig().get('readyTimeout'));
-  if (!Number.isFinite(raw) || raw <= 0) {
-    return DEFAULT_READY_TIMEOUT_MS;
-  }
-  return Math.max(MIN_READY_TIMEOUT_MS, Math.round(raw * 1000));
+  return clampReadyTimeoutMs(
+    getConfig().get('readyTimeout'),
+    DEFAULT_READY_TIMEOUT_MS,
+    MIN_READY_TIMEOUT_MS
+  );
 }
 
 /**
