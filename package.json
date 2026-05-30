@@ -2,7 +2,7 @@
   "name": "mkdocs-live-preview",
   "displayName": "MkDocs Live Preview",
   "description": "%ext.description%",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "obook",
   "license": "MIT",
   "repository": {

@@ -5,6 +5,19 @@ All notable changes to this extension are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-05-30
+
+### Changed
+
+- Harden `build.sh`: detect a usable Node (>= 18) from `PATH` or the most recent
+  nvm install, instead of relying on `nvm use`, so local packaging no longer
+  fails on machines where `node` is not on the default `PATH`.
+
+### Fixed
+
+- Exclude hidden tooling directories from the packaged `.vsix`, so editor and
+  agent configuration is never shipped with the extension.
+
 ## [0.1.0] - 2026-05-29
 
 ### Added
@@ -29,4 +42,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Internationalization: English by default, with a complete French localization.
 - `build.sh` to produce an installable `.vsix` locally.
 
+[0.1.1]: https://github.com/obook/mkdocs-vsc/releases/tag/v0.1.1
 [0.1.0]: https://github.com/obook/mkdocs-vsc/releases/tag/v0.1.0
