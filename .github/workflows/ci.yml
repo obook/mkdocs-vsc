@@ -21,11 +21,13 @@ jobs:
           node-version: '22'
 
       # Extract the version from package.json so the .vsix filename matches
-      # the conventional name used by previous releases. Available to later
-      # steps as $VERSION (and as the artifact name suffix).
+      # the conventional name used by previous releases. Exposed to later
+      # steps as steps.pkg.outputs.version.
       - name: Read package version
         id: pkg
-        run: echo "version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
+        run: |
+          version=$(node -p "require('./package.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       # The extension has no runtime dependencies, so there is nothing to
       # install: the unit tests run on the built-in Node test runner.
