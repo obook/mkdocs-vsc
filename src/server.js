@@ -19,6 +19,7 @@ const { getConfig } = require('./config');
 const { findProjectRoot, resolveMkdocsCmd } = require('./project');
 const { preflight } = require('./preflight');
 const { clampReadyTimeoutMs } = require('./timeout');
+const { shouldUseShell } = require('./spawn');
 
 /** Running server process, or null when stopped. @type {import('child_process').ChildProcess | null} */
 let serverProc = null;
@@ -98,10 +99,14 @@ function start() {
   output.appendLine(`$ ${cmd} ${args.join(' ')}   (cwd=${root})`);
   /* PYTHONUNBUFFERED=1 disables Python's stdout buffering so MkDocs' INFO lines
      reach our output channel in real time, instead of arriving in a single
-     burst at the end of a slow build (very visible on Windows). */
+     burst at the end of a slow build (very visible on Windows).
+     `shell: true` on Windows for bare command names lets the shell resolve
+     `mkdocs` against PATHEXT (mkdocs.cmd / mkdocs.exe); without it, Node
+     spawns the literal name and fails with ENOENT when no `.venv` exists. */
   const proc = cp.spawn(cmd, args, {
     cwd: root,
-    env: { ...process.env, NO_MKDOCS_2_WARNING: '1', PYTHONUNBUFFERED: '1' }
+    env: { ...process.env, NO_MKDOCS_2_WARNING: '1', PYTHONUNBUFFERED: '1' },
+    shell: shouldUseShell(cmd, process.platform)
   });
   serverProc = proc;
   serverRoot = root;
@@ -128,7 +133,20 @@ function start() {
     }
   });
   proc.on('error', (err) => {
-    vscode.window.showErrorMessage(vscode.l10n.t('MkDocs: {0}', err.message));
+    /* ENOENT here means the spawn itself failed (e.g. mkdocs disappeared
+       between the preflight probe and the start, or the .venv binary is no
+       longer executable). The preflight has already filtered out the simple
+       "not installed" case, so we keep the message short and point to the
+       output channel where the raw stderr is visible. */
+    const detail = err.code === 'ENOENT'
+      ? vscode.l10n.t('Could not start mkdocs in this folder. Check that it is installed in the project .venv or available on the PATH, then try again.')
+      : vscode.l10n.t('Could not start mkdocs: {0}.', err.message);
+    const openOutput = vscode.l10n.t('Open output');
+    vscode.window.showErrorMessage(detail, openOutput).then((choice) => {
+      if (choice === openOutput) {
+        output.show(true);
+      }
+    });
     if (serverProc === proc) {
       serverProc = null;
       serverRoot = null;

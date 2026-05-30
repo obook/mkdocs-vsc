@@ -17,6 +17,7 @@ const fs = require('fs');
 const path = require('path');
 const { resolveMkdocsCmd } = require('./project');
 const { buildInstallCommand } = require('./install');
+const { shouldUseShell } = require('./spawn');
 
 /** Time (ms) after which a probe command is assumed to have started. */
 const PROBE_TIMEOUT_MS = 4000;
@@ -24,13 +25,16 @@ const PROBE_TIMEOUT_MS = 4000;
 /**
  * Tells whether a command can be executed (false on ENOENT / not found).
  *
+ * Picks shell mode through `shouldUseShell` so the probe and the real spawn
+ * agree on whether to invoke the shell. A mismatch here is what made an
+ * earlier version of the extension pass the preflight on Windows and then
+ * fail with ENOENT at the real spawn when no `.venv` was available.
+ *
  * @param {string} cmd - The command or path to run.
  * @param {string[]} args - Arguments passed to the command.
- * @param {boolean} useShell - Run through a shell (needed for PATH lookups of
- *        .cmd/.bat on Windows).
  * @returns {Promise<boolean>} True if the command could be spawned.
  */
-function canRun(cmd, args, useShell) {
+function canRun(cmd, args) {
   return new Promise((resolve) => {
     let done = false;
     function finish(value) {
@@ -40,7 +44,10 @@ function canRun(cmd, args, useShell) {
       }
     }
     try {
-      const child = cp.spawn(cmd, args, { stdio: 'ignore', shell: !!useShell });
+      const child = cp.spawn(cmd, args, {
+        stdio: 'ignore',
+        shell: shouldUseShell(cmd, process.platform)
+      });
       child.on('error', () => finish(false)); /* Binary not found. */
       child.on('exit', () => finish(true)); /* Ran, whatever the exit code. */
       setTimeout(() => {
@@ -82,10 +89,7 @@ function suggestedInstallCommand(root, python) {
 async function preflight(root) {
   const isWin = process.platform === 'win32';
   const cmd = resolveMkdocsCmd(root);
-  /* A path (venv or explicit setting) is probed without a shell; a PATH
-     command sometimes needs the shell on Windows (.cmd/.bat). */
-  const cmdIsPath = cmd.includes('/') || cmd.includes('\\');
-  if (await canRun(cmd, ['--version'], cmdIsPath ? false : isWin)) {
+  if (await canRun(cmd, ['--version'])) {
     return { ok: true };
   }
 
@@ -93,7 +97,7 @@ async function preflight(root) {
   const pythonCandidates = isWin ? ['py', 'python', 'python3'] : ['python3', 'python'];
   let python = null;
   for (const candidate of pythonCandidates) {
-    if (await canRun(candidate, ['--version'], isWin)) {
+    if (await canRun(candidate, ['--version'])) {
       python = candidate;
       break;
     }
