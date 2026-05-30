@@ -5,6 +5,23 @@ All notable changes to this extension are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-05-30
+
+### Fixed
+
+- Raise the default wait time for the MkDocs server to become ready from 20 s
+  to 120 s, so large sites or heavy themes (e.g. `pyodide-mkdocs-theme`) no
+  longer trigger a spurious "server is not responding" message when the first
+  build takes longer than 20 s.
+
+### Added
+
+- New setting `mkdocsLivePreview.readyTimeout` (in seconds, default 120) to
+  fine-tune the ready timeout for very large sites.
+- Set `PYTHONUNBUFFERED=1` for the `mkdocs serve` process so its log lines
+  appear in the output channel in real time on Windows, instead of arriving
+  in a single burst at the end of the build.
+
 ## [0.1.3] - 2026-05-30
 
 ### Added
@@ -59,6 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Internationalization: English by default, with a complete French localization.
 - `build.sh` to produce an installable `.vsix` locally.
 
+[0.1.4]: https://github.com/obook/mkdocs-vsc/releases/tag/v0.1.4
 [0.1.3]: https://github.com/obook/mkdocs-vsc/releases/tag/v0.1.3
 [0.1.2]: https://github.com/obook/mkdocs-vsc/releases/tag/v0.1.2
 [0.1.1]: https://github.com/obook/mkdocs-vsc/releases/tag/v0.1.1
