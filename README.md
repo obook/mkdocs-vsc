@@ -40,6 +40,7 @@ See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the internal design.
 ## Requirements
 
 - VS Code 1.90 or later.
+- Python 3 (3.8 or later, as required by MkDocs).
 - An MkDocs project (a `mkdocs.yml` file at the root of the workspace).
 - `mkdocs` installed, preferably in a `.venv` at the project root
   (auto-detected), otherwise available on the `PATH`.
