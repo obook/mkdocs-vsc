@@ -10,6 +10,13 @@ refreshes the preview on every save.
 
 ![MkDocs Live Preview in VS Code: the Markdown source on the left, the rendered MkDocs page on the right.](media/screen.png)
 
+## Requirements
+
+- VS Code (1.90 or later).
+- Python 3 (3.8 or later).
+- Python package `mkdocs` installed, preferably in a `.venv` at the project root (auto-detected), otherwise available on the `PATH`.
+- An MkDocs project (a `mkdocs.yml` file at the root of the workspace).
+
 ## Installation
 
 The extension is not on the VS Code Marketplace yet, so it is installed from a
@@ -36,26 +43,6 @@ touch the editor: you edit the Markdown source as usual, and the panel on the
 side shows the faithful rendering.
 
 See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the internal design.
-
-## Requirements
-
-- VS Code (1.90 or later).
-- Python 3 (3.8 or later).
-- Python package `mkdocs` installed, preferably in a `.venv` at the project root (auto-detected), otherwise available on the `PATH`.
-- An MkDocs project (a `mkdocs.yml` file at the root of the workspace).
-
-## Run in development
-
-No npm dependencies, no build step: the extension is written in plain
-JavaScript.
-
-1. Open this folder in VS Code.
-2. Press **F5** (this launches an Extension Development Host).
-3. In the new window, open your MkDocs project.
-4. Open a `.md` file, then run **MkDocs: Open Live Preview to the Side**
-   (the icon in the editor title bar, or `Ctrl+K V`).
-
-The `mkdocs serve` server starts automatically and the preview opens to the side.
 
 ## Commands
 
@@ -119,6 +106,19 @@ Version 0.1.4 mitigates this from the extension side:
 - `PYTHONUNBUFFERED=1` is set for the `mkdocs serve` process, so MkDocs `INFO`
   lines reach the output channel in real time on Windows instead of arriving
   in a single burst at the end of the build.
+
+## Run in development
+
+No npm dependencies, no build step: the extension is written in plain
+JavaScript.
+
+1. Open this folder in VS Code.
+2. Press **F5** (this launches an Extension Development Host).
+3. In the new window, open your MkDocs project.
+4. Open a `.md` file, then run **MkDocs: Open Live Preview to the Side**
+   (the icon in the editor title bar, or `Ctrl+K V`).
+
+The `mkdocs serve` server starts automatically and the preview opens to the side.
 
 ### What you can do in your MkDocs project
 
