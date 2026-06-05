@@ -16,10 +16,38 @@ Planned improvements for MkDocs Live Preview. Checked items are done.
 
 ## Robustness
 
-- [ ] Short-circuit `waitForReady` if the server process exits during the wait.
+- [x] Short-circuit `waitForReady` if the server process exits during the wait.
 - [ ] Reveal the output channel automatically when the server fails to start.
 - [ ] More tolerant `mkdocs.yml` parsing (e.g. `docs_dir: !ENV [...]`, `exclude_docs`).
-- [ ] Fix preview staleness on project switch and on host/port change (see #1).
+- [x] Fix preview staleness on project switch and on host/port change (see #1).
+- [ ] Restore the preview after a window reload (e.g. "Open Recent" opens
+  another folder): register a `WebviewPanelSerializer` so the remembered webview
+  re-attaches and re-navigates to the current project instead of showing a blank
+  pane.
+- [ ] Post-#1 hardening (see #2): handle a foreign server on the port during a
+  project switch, pin the remaining restart entry points to the served root,
+  and refresh the "single-file" wording in `ARCHITECTURE.md`.
+
+## Testing
+
+Automated `node:test` suites cover the pure helpers (`mapping`, `timeout`,
+`spawn`, `install`, `ansi`, `webview`). The VS Code glue still relies on manual
+checks in the Extension Development Host; the following are pending:
+
+- [ ] Host change (not only port): changing `mkdocsLivePreview.host` mid-session
+  rebinds the server and reloads the preview on the new origin.
+- [ ] Two rapid successive host/port changes never leave a spurious "not
+  responding" message (supersede guard).
+- [ ] Rapid active-editor switches between projects always end on the last
+  selected file's project (sync-generation guard).
+- [ ] The "port already in use" warning still fires after ANSI stripping (a
+  foreign `mkdocs serve` already on the port).
+- [ ] Switching to a project with no mkdocs / no `.venv` shows the preflight
+  error, not an endless "Starting..." overlay or a blank page.
+- [ ] Large/slow site (e.g. pyodide-mkdocs-theme): the "Starting..." overlay
+  holds during the build, then the page loads.
+- [ ] Regression: livereload still refreshes the iframe on save, and a
+  single-folder workspace behaves as before.
 
 ## Done (0.1.0)
 
