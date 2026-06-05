@@ -28,6 +28,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   time, no longer blocks the new port; without this the iframe loaded the new
   origin only to be refused by the stale CSP. A restart that a later switch
   supersedes no longer surfaces a spurious "not responding" message. (#1)
+- Server output no longer shows raw ANSI escape codes (e.g. `[36m...[0m`) in
+  the "MkDocs Live Preview" panel. Some plugins (such as pyodide-mkdocs-theme)
+  colour their log lines even when stdout is not a terminal, and the plain
+  output channel rendered the escape sequences literally. They are now stripped
+  before the mkdocs output is appended.
 
 ## [0.1.6] - 2026-05-30
 

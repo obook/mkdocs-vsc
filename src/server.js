@@ -20,6 +20,7 @@ const { findProjectRoot, resolveMkdocsCmd } = require('./project');
 const { preflight } = require('./preflight');
 const { clampReadyTimeoutMs, pollUntilReady } = require('./timeout');
 const { shouldUseShell } = require('./spawn');
+const { stripAnsi } = require('./ansi');
 
 /** Running server process, or null when stopped. @type {import('child_process').ChildProcess | null} */
 let serverProc = null;
@@ -112,9 +113,11 @@ function start(rootOverride) {
   });
   serverProc = proc;
   serverRoot = root;
-  proc.stdout.on('data', (data) => output.append(data.toString()));
+  /* mkdocs (and some plugins) colour their logs with ANSI escapes even off a
+     TTY; strip them so the plain OutputChannel does not show "[36m..." noise. */
+  proc.stdout.on('data', (data) => output.append(stripAnsi(data.toString())));
   proc.stderr.on('data', (data) => {
-    const text = data.toString();
+    const text = stripAnsi(data.toString());
     output.append(text);
     if (/address already in use|errno 98/i.test(text)) {
       vscode.window.showErrorMessage(
