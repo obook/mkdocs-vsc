@@ -61,9 +61,21 @@ function isRunning() {
   return !!serverProc;
 }
 
-/** Starts `mkdocs serve` for the current project, if not already running. */
-function start() {
-  const root = findProjectRoot();
+/** @returns {string | null} The project root the running server serves, or null. */
+function currentRoot() {
+  return serverRoot;
+}
+
+/**
+ * Starts `mkdocs serve` for a project, if not already running.
+ *
+ * @param {string} [rootOverride] - Project root to serve. Defaults to the
+ *        project of the active file. Pass it explicitly when the active editor
+ *        cannot be trusted (e.g. a settings-change restart, where the focus is
+ *        on the Settings UI rather than on a project file).
+ */
+function start(rootOverride) {
+  const root = rootOverride || findProjectRoot();
   if (!root) {
     vscode.window.showErrorMessage(
       vscode.l10n.t(
@@ -175,10 +187,17 @@ function stop() {
   });
 }
 
-/** Restarts the server after waiting for the previous one to exit. */
-async function restart() {
+/**
+ * Restarts the server after waiting for the previous one to exit.
+ *
+ * @param {string} [rootOverride] - Project root to serve after the restart.
+ *        Defaults to the project of the active file. Capture
+ *        {@link currentRoot} before calling when the restart must keep serving
+ *        the same project regardless of the active editor.
+ */
+async function restart(rootOverride) {
   await stop();
-  start();
+  start(rootOverride);
 }
 
 /**
@@ -249,15 +268,19 @@ async function waitForReady(timeoutMs) {
 }
 
 /**
- * Ensures a server is serving the current project: restarts on a project
- * change (waiting for the old one to exit), warns on a foreign server already
- * on the port, and runs the preflight checks before starting.
+ * Ensures a server is serving a project: restarts on a project change (waiting
+ * for the old one to exit), warns on a foreign server already on the port, and
+ * runs the preflight checks before starting.
  *
- * @returns {Promise<boolean>} False if the current folder is not an MkDocs
- *          project; true otherwise.
+ * @param {string} [rootOverride] - Project root to ensure. Defaults to the
+ *        project of the active file. Pass it explicitly when the caller has
+ *        already resolved the target project and the active editor may move on
+ *        across the awaits (e.g. an active-editor-change driven switch).
+ * @returns {Promise<boolean>} False if the folder is not an MkDocs project;
+ *          true otherwise.
  */
-async function ensure() {
-  const root = findProjectRoot();
+async function ensure(rootOverride) {
+  const root = rootOverride || findProjectRoot();
   if (!root) {
     await stop();
     vscode.window.showWarningMessage(
@@ -294,7 +317,7 @@ async function ensure() {
   if (!(await preflight(root)).ok) {
     return false;
   }
-  start();
+  start(root);
   return true;
 }
 
@@ -302,6 +325,7 @@ module.exports = {
   init,
   setStateListener,
   isRunning,
+  currentRoot,
   start,
   stop,
   restart,

@@ -30,8 +30,12 @@ livereload handling refresh on save.
 ### Activation and UI
 
 `activate()` registers the commands, a status bar item, an active-editor change
-listener (auto-sync) and a workspace-folders change listener. Activation is
-triggered on Markdown files (`onLanguage:markdown`).
+listener (auto-sync), a workspace-folders change listener and a configuration
+change listener. The active-editor listener re-serves the right project before
+navigating when the new file belongs to a different project than the one being
+served; the configuration listener restarts the server and recomputes the
+preview origin when `host` or `port` changes. Activation is triggered on
+Markdown files (`onLanguage:markdown`).
 
 ### Server lifecycle
 

@@ -5,6 +5,26 @@ All notable changes to this extension are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Preview no longer goes stale when switching the active editor to a file of
+  another project in a multi-project workspace. Previously the iframe
+  navigated to the new project's URL against the old project's running server,
+  yielding a 404 or the wrong page. On an active-editor change, the active
+  file's project is now compared to the one being served; when it differs, the
+  server is restarted for the new project before navigating. Files that belong
+  to no project (or to the project already served) keep the cheap navigate
+  path, so switching to a scratch file never restarts the server. (#1)
+- Preview no longer points at a stale origin after a `host`/`port` setting
+  change mid-session. `externalBase` was cached when the preview opened, so
+  changing `mkdocsLivePreview.port` (or `host`) left navigation pointing at the
+  old origin until the preview was reopened, and the server kept listening on
+  the old port. A `workspace.onDidChangeConfiguration` listener now restarts
+  the server (rebinding to the new address) and recomputes the origin when
+  `host` or `port` changes. (#1)
+
 ## [0.1.6] - 2026-05-30
 
 ### Fixed
@@ -118,6 +138,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Internationalization: English by default, with a complete French localization.
 - `build.sh` to produce an installable `.vsix` locally.
 
+[Unreleased]: https://github.com/obook/mkdocs-vsc/compare/v0.1.6...HEAD
 [0.1.6]: https://github.com/obook/mkdocs-vsc/releases/tag/v0.1.6
 [0.1.5]: https://github.com/obook/mkdocs-vsc/releases/tag/v0.1.5
 [0.1.4]: https://github.com/obook/mkdocs-vsc/releases/tag/v0.1.4

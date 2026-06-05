@@ -24,7 +24,7 @@ const vscode = require('vscode');
 const server = require('./src/server');
 const statusBar = require('./src/statusBar');
 const preview = require('./src/preview');
-const { getConfig } = require('./src/config');
+const { getConfig, SECTION } = require('./src/config');
 
 /**
  * Activates the extension: initializes modules, registers commands and
@@ -45,7 +45,11 @@ function activate(context) {
     vscode.commands.registerCommand('mkdocsLivePreview.restartServer', () => server.restart()),
     vscode.window.onDidChangeActiveTextEditor(() => {
       if (getConfig().get('autoSync')) {
-        preview.navigateToActive();
+        /* syncToActive re-serves the right project first when the active file
+           belongs to a different one than the server is currently serving.
+           Fire-and-forget: swallow its promise so a failed sync never raises
+           an unhandled rejection in the extension host. */
+        preview.syncToActive().catch(() => {});
       }
     }),
     /* Project change (folder added or removed): re-serve the right project for
@@ -53,6 +57,16 @@ function activate(context) {
     vscode.workspace.onDidChangeWorkspaceFolders(async () => {
       if (preview.isOpen() && (await server.ensure()) && (await server.waitForReady())) {
         preview.navigateToActive(true);
+      }
+    }),
+    /* Host/port change: the cached origin and the running server's bound port
+       both go stale, so restart the server and re-point the preview. */
+    vscode.workspace.onDidChangeConfiguration((event) => {
+      if (
+        event.affectsConfiguration(`${SECTION}.host`) ||
+        event.affectsConfiguration(`${SECTION}.port`)
+      ) {
+        preview.onOriginConfigChanged().catch(() => {});
       }
     })
   );

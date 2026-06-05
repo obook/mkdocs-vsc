@@ -14,13 +14,20 @@
 
 const vscode = require('vscode');
 const { getConfig } = require('./config');
-const { pagePathForFile } = require('./project');
+const { pagePathForFile, findProjectRoot } = require('./project');
 const server = require('./server');
 
 /** The single reusable preview panel, or null when closed. @type {vscode.WebviewPanel | null} */
 let panel = null;
 /** External origin of the server (e.g. http://127.0.0.1:9999). */
 let externalBase = null;
+/** Last source file the preview navigated to (for re-navigation after a restart). */
+let lastSourcePath = null;
+/* Monotonic counter that lets an async sync detect it has been superseded by a
+   later one: each entry into syncToActive/onOriginConfigChanged bumps it, and a
+   slow path bails after its awaits when the value has moved on. This prevents a
+   stale restart from navigating against a server a newer switch has replaced. */
+let syncSeq = 0;
 
 /**
  * Resolves the external origin of the local server, handling port forwarding
@@ -103,6 +110,28 @@ function webviewHtml(origin, startingText) {
 }
 
 /**
+ * Posts a "starting" status to the overlay (spinner shown).
+ *
+ * @param {string} text - The message to display.
+ */
+function postStatus(text) {
+  if (panel) {
+    panel.webview.postMessage({ type: 'status', text });
+  }
+}
+
+/**
+ * Posts an error to the overlay (spinner hidden).
+ *
+ * @param {string} text - The message to display.
+ */
+function postError(text) {
+  if (panel) {
+    panel.webview.postMessage({ type: 'error', text });
+  }
+}
+
+/**
  * Navigates the preview to the page of a given Markdown file.
  *
  * @param {string | null} filePath - Absolute path of the source file, or null.
@@ -118,6 +147,10 @@ function navigateTo(filePath, force = false) {
   if (page === null && !force) {
     return;
   }
+  /* Remember the source so a later origin change can re-show the same page. */
+  if (filePath) {
+    lastSourcePath = filePath;
+  }
   panel.webview.postMessage({ type: 'navigate', url: `${externalBase}/${page || ''}` });
 }
 
@@ -131,6 +164,96 @@ function navigateTo(filePath, force = false) {
 function navigateToActive(force = false) {
   const editor = vscode.window.activeTextEditor;
   navigateTo(editor ? editor.document.uri.fsPath : null, force);
+}
+
+/**
+ * Keeps the preview in sync with the active editor. When the active file
+ * belongs to a different MkDocs project than the one currently being served
+ * (multi-project workspace), restarts the server for that project before
+ * navigating; otherwise just navigates to the active file's page.
+ *
+ * Without the restart, the iframe would load the new project's URL against the
+ * old project's server, yielding a 404 or the wrong page. Files that belong to
+ * no project (or to the project already served) take the cheap navigate path,
+ * so switching to a scratch file or a sibling page never restarts the server.
+ *
+ * @returns {Promise<void>}
+ */
+async function syncToActive() {
+  if (!panel) {
+    return;
+  }
+  /* Claim this sync: any later one bumps syncSeq and supersedes us. */
+  const seq = ++syncSeq;
+  const editor = vscode.window.activeTextEditor;
+  const filePath =
+    editor && editor.document.uri.scheme === 'file'
+      ? editor.document.uri.fsPath
+      : null;
+  const root = filePath ? findProjectRoot(filePath) : undefined;
+
+  /* Same project (or no project): the running server still applies. */
+  if (!root || root === server.currentRoot()) {
+    navigateToActive();
+    return;
+  }
+
+  /* Different project: re-serve that exact root before navigating. We pass the
+     computed root to ensure() rather than letting it re-read the active editor,
+     which may have moved on across the awaits below. */
+  postStatus(vscode.l10n.t('Starting the MkDocs server…'));
+  if (!(await server.ensure(root)) || !(await server.waitForReady())) {
+    /* ensure()/waitForReady() already surfaced the failure (warning dialog or
+       the output channel); leave the overlay showing the last status. */
+    return;
+  }
+  /* A newer switch started while we were waiting: it owns the navigation now. */
+  if (seq !== syncSeq) {
+    return;
+  }
+  navigateTo(filePath, true);
+}
+
+/**
+ * Reacts to a change of the `host`/`port` settings: restarts the running
+ * server so it rebinds to the new address, then re-points the open preview at
+ * the recomputed origin. `externalBase` is cached when the preview opens, so
+ * without this the preview keeps navigating to the old origin (and the server
+ * keeps listening on the old port) until it is reopened.
+ *
+ * @returns {Promise<void>}
+ */
+async function onOriginConfigChanged() {
+  /* Claim this restart so a concurrent project switch can supersede it. */
+  const seq = ++syncSeq;
+  /* Keep serving the same project across the rebind: the active editor may be
+     the Settings UI rather than a project file when this fires, so pin the
+     root captured before the restart instead of re-reading the editor. */
+  if (server.isRunning()) {
+    const root = server.currentRoot();
+    await server.restart(root);
+    if (seq !== syncSeq) {
+      return;
+    }
+    if (!panel) {
+      return;
+    }
+    postStatus(vscode.l10n.t('Starting the MkDocs server…'));
+    if (!(await server.waitForReady())) {
+      postError(vscode.l10n.t('The MkDocs server is not responding. See the "MkDocs Live Preview" output.'));
+      return;
+    }
+    if (seq !== syncSeq) {
+      return;
+    }
+  }
+  if (!panel) {
+    return;
+  }
+  await ensureExternalBase();
+  /* Re-show the page the user was on, not the active editor (likely the
+     Settings UI), which would force a jump to the site root. */
+  navigateTo(lastSourcePath, true);
 }
 
 /**
@@ -168,16 +291,10 @@ async function openPreview(toSide) {
   /* The initial build takes a few seconds: wait for the server to answer
      before loading the page, otherwise the iframe shows a blank page
      (connection refused) without retrying. */
-  panel.webview.postMessage({
-    type: 'status',
-    text: vscode.l10n.t('Starting the MkDocs server…')
-  });
+  postStatus(vscode.l10n.t('Starting the MkDocs server…'));
   const ready = await server.waitForReady();
   if (!ready) {
-    panel.webview.postMessage({
-      type: 'error',
-      text: vscode.l10n.t('The MkDocs server is not responding. See the "MkDocs Live Preview" output.')
-    });
+    postError(vscode.l10n.t('The MkDocs server is not responding. See the "MkDocs Live Preview" output.'));
     return;
   }
   navigateTo(sourcePath, true);
@@ -188,4 +305,4 @@ function isOpen() {
   return !!panel;
 }
 
-module.exports = { openPreview, navigateToActive, isOpen };
+module.exports = { openPreview, navigateToActive, syncToActive, onOriginConfigChanged, isOpen };
