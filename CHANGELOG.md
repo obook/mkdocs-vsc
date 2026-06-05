@@ -26,8 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `host` or `port` changes. The webview HTML is rebuilt with the new origin so
   the iframe Content-Security-Policy (`frame-src`), which is fixed at open
   time, no longer blocks the new port; without this the iframe loaded the new
-  origin only to be refused by the stale CSP. A restart that a later switch
-  supersedes no longer surfaces a spurious "not responding" message. (#1)
+  origin only to be refused by the stale CSP. The target page is then loaded by
+  baking its URL into a fresh iframe `src` rather than by a scripted navigate,
+  which the browser refuses once the iframe has landed on a `chrome-error` page
+  after a failed load. A restart that a later switch supersedes no longer
+  surfaces a spurious "not responding" message. (#1)
 - Server output no longer shows raw ANSI escape codes (e.g. `[36m...[0m`) in
   the "MkDocs Live Preview" panel. Some plugins (such as pyodide-mkdocs-theme)
   colour their log lines even when stdout is not a terminal, and the plain

@@ -15,6 +15,7 @@
 const vscode = require('vscode');
 const { getConfig } = require('./config');
 const { pagePathForFile, findProjectRoot } = require('./project');
+const { webviewHtml } = require('./webview');
 const server = require('./server');
 
 /** The single reusable preview panel, or null when closed. @type {vscode.WebviewPanel | null} */
@@ -42,71 +43,6 @@ async function ensureExternalBase() {
   );
   externalBase = `${ext.scheme}://${ext.authority}`;
   return externalBase;
-}
-
-/**
- * Builds the webview HTML: an iframe plus a status overlay with a spinner.
- * The status text uses role="status" so screen readers announce it, and the
- * spinner is marked decorative.
- *
- * @param {string} origin - The server origin allowed by the iframe CSP.
- * @param {string} startingText - Initial overlay message.
- * @returns {string} The HTML document.
- */
-function webviewHtml(origin, startingText) {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy"
-  content="default-src 'none'; frame-src ${origin}; style-src 'unsafe-inline'; script-src 'unsafe-inline';">
-<style>
-  html, body { margin: 0; padding: 0; height: 100%; background: #fff; }
-  iframe { width: 100%; height: 100vh; border: 0; background: #fff; }
-  #overlay {
-    position: fixed; inset: 0; display: flex; flex-direction: column; gap: 14px;
-    align-items: center; justify-content: center; padding: 1rem; text-align: center;
-    font-family: sans-serif; font-size: 13px; color: #888; background: #fff;
-  }
-  #overlay .spinner {
-    width: 28px; height: 28px; border-radius: 50%;
-    border: 3px solid currentColor; border-top-color: transparent;
-    opacity: 0.55; animation: mk-spin 0.9s linear infinite;
-  }
-  @keyframes mk-spin { to { transform: rotate(360deg); } }
-  @media (prefers-reduced-motion: reduce) {
-    #overlay .spinner { animation-duration: 2.4s; }
-  }
-</style>
-</head>
-<body>
-<div id="overlay" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="overlay-text">${startingText}</div></div>
-<iframe id="frame" title="MkDocs preview"></iframe>
-<script>
-  const frame = document.getElementById('frame')
-  const overlay = document.getElementById('overlay')
-  const overlayText = document.getElementById('overlay-text')
-  const spinner = overlay.querySelector('.spinner')
-  frame.addEventListener('load', () => { if (frame.src) overlay.style.display = 'none' })
-  window.addEventListener('message', (event) => {
-    const msg = event.data
-    if (!msg) return
-    if (msg.type === 'navigate' && typeof msg.url === 'string') {
-      overlay.style.display = 'none'
-      frame.src = msg.url
-    } else if (msg.type === 'status' && typeof msg.text === 'string') {
-      overlayText.textContent = msg.text
-      spinner.style.display = ''
-      overlay.style.display = 'flex'
-    } else if (msg.type === 'error' && typeof msg.text === 'string') {
-      overlayText.textContent = msg.text
-      spinner.style.display = 'none'
-      overlay.style.display = 'flex'
-    }
-  })
-</script>
-</body>
-</html>`;
 }
 
 /**
@@ -239,11 +175,9 @@ async function onOriginConfigChanged() {
   if (!panel) {
     return;
   }
-  /* Rebuild the webview with the new origin BEFORE navigating: the CSP
-     frame-src baked into the existing HTML still names the old origin, so
-     navigating the current iframe to the new host/port is blocked by the
-     browser. Resetting the HTML (as on a fresh open) also clears the dead
-     old-origin page and its failing livereload poll. */
+  /* Rebuild the webview with the new origin and show the overlay while the
+     rebound server starts. The old HTML's CSP frame-src still names the old
+     origin, and its iframe may sit on the now-dead old-origin page. */
   const origin = await ensureExternalBase();
   panel.webview.html = webviewHtml(origin, vscode.l10n.t('Starting the MkDocs server…'));
   if (server.isRunning()) {
@@ -259,9 +193,13 @@ async function onOriginConfigChanged() {
       return;
     }
   }
-  /* Re-show the page the user was on, not the active editor (likely the
-     Settings UI), which would force a jump to the site root. */
-  navigateTo(lastSourcePath, true);
+  /* Re-show the page the user was on (not the active editor, likely the
+     Settings UI). Bake the URL into a fresh iframe src rather than navigating
+     by postMessage: a scripted cross-origin navigate is refused once the iframe
+     has landed on a chrome-error page (after any failed load), and a fresh
+     document load also avoids the postMessage-after-html-reset race. */
+  const page = lastSourcePath ? pagePathForFile(lastSourcePath) : null;
+  panel.webview.html = webviewHtml(origin, vscode.l10n.t('Starting the MkDocs server…'), `${origin}/${page || ''}`);
 }
 
 /**
