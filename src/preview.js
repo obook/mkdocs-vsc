@@ -235,22 +235,30 @@ async function onOriginConfigChanged() {
     if (seq !== syncSeq) {
       return;
     }
-    if (!panel) {
-      return;
-    }
-    postStatus(vscode.l10n.t('Starting the MkDocs server…'));
+  }
+  if (!panel) {
+    return;
+  }
+  /* Rebuild the webview with the new origin BEFORE navigating: the CSP
+     frame-src baked into the existing HTML still names the old origin, so
+     navigating the current iframe to the new host/port is blocked by the
+     browser. Resetting the HTML (as on a fresh open) also clears the dead
+     old-origin page and its failing livereload poll. */
+  const origin = await ensureExternalBase();
+  panel.webview.html = webviewHtml(origin, vscode.l10n.t('Starting the MkDocs server…'));
+  if (server.isRunning()) {
     if (!(await server.waitForReady())) {
-      postError(vscode.l10n.t('The MkDocs server is not responding. See the "MkDocs Live Preview" output.'));
+      /* Only surface the failure for the live restart; a superseded one stays
+         silent so a later, successful switch owns the overlay. */
+      if (seq === syncSeq) {
+        postError(vscode.l10n.t('The MkDocs server is not responding. See the "MkDocs Live Preview" output.'));
+      }
       return;
     }
     if (seq !== syncSeq) {
       return;
     }
   }
-  if (!panel) {
-    return;
-  }
-  await ensureExternalBase();
   /* Re-show the page the user was on, not the active editor (likely the
      Settings UI), which would force a jump to the site root. */
   navigateTo(lastSourcePath, true);

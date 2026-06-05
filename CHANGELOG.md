@@ -23,7 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   old origin until the preview was reopened, and the server kept listening on
   the old port. A `workspace.onDidChangeConfiguration` listener now restarts
   the server (rebinding to the new address) and recomputes the origin when
-  `host` or `port` changes. (#1)
+  `host` or `port` changes. The webview HTML is rebuilt with the new origin so
+  the iframe Content-Security-Policy (`frame-src`), which is fixed at open
+  time, no longer blocks the new port; without this the iframe loaded the new
+  origin only to be refused by the stale CSP. A restart that a later switch
+  supersedes no longer surfaces a spurious "not responding" message. (#1)
 
 ## [0.1.6] - 2026-05-30
 
