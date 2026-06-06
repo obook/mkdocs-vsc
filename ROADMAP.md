@@ -7,10 +7,9 @@ Planned improvements for MkDocs Live Preview. Checked items are done.
 - [x] Continuous integration (GitHub Actions): run `npm test` and `vsce package` on push and on tags.
 - [ ] Publish to the VS Code Marketplace and Open VSX (publisher account, `vscode:prepublish` script). The 128x128 Marketplace icon is ready (`media/icon.png`).
 - [x] Compress `media/screen.png` to shrink the packaged `.vsix`.
-- [ ] Update the GitHub Actions in `.github/workflows/ci.yml` (`actions/checkout`,
-  `actions/setup-node`, `actions/upload-artifact`, `softprops/action-gh-release`)
-  to versions that support Node.js 24. Node.js 20 is forced off on 2026-06-16 and
-  removed from the runner on 2026-09-16. (see #3)
+- [x] Update the GitHub Actions in `.github/workflows/ci.yml` to versions that
+  support Node.js 24: `actions/checkout@v6`, `actions/setup-node@v6`,
+  `actions/upload-artifact@v7`, `softprops/action-gh-release@v3` (see #3).
 
 ## Features and UX
 
