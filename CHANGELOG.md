@@ -5,6 +5,25 @@ All notable changes to this extension are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.8] - 2026-06-07
+
+Internal refactoring and project housekeeping. The extension behaves exactly as
+in 0.1.7.
+
+### Changed
+
+- Reorganized the source into layered subfolders (`ui`, `server`, `domain`,
+  `config`, `util`), so the architecture is visible from the file tree and each
+  module keeps a single responsibility.
+- Extracted the `mkdocs.yml` parsing and the server readiness logic into pure
+  modules with no VS Code dependency, so both can be unit-tested.
+
+### Added
+
+- Unit tests for the `mkdocs.yml` parser and the server readiness probe.
+- `CONTRIBUTING.md` and `CODE_OF_CONDUCT.md`, plus an `ARCHITECTURE.md` updated
+  to describe the layered module structure.
+
 ## [0.1.7] - 2026-06-05
 
 ### Fixed
@@ -150,6 +169,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Internationalization: English by default, with a complete French localization.
 - `build.sh` to produce an installable `.vsix` locally.
 
+[0.1.8]: https://github.com/obook/mkdocs-vsc/releases/tag/v0.1.8
 [0.1.7]: https://github.com/obook/mkdocs-vsc/releases/tag/v0.1.7
 [0.1.6]: https://github.com/obook/mkdocs-vsc/releases/tag/v0.1.6
 [0.1.5]: https://github.com/obook/mkdocs-vsc/releases/tag/v0.1.5
