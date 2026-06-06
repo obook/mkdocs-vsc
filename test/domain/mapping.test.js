@@ -12,7 +12,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { computePagePath } = require('../src/mapping');
+const { computePagePath } = require('../../src/domain/mapping');
 
 test('use_directory_urls false: .md maps to .html', () => {
   assert.strictEqual(

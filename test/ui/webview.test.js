@@ -12,7 +12,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { webviewHtml } = require('../src/webview');
+const { webviewHtml } = require('../../src/ui/webview');
 
 test('CSP frame-src names the given origin', () => {
   const html = webviewHtml('http://127.0.0.1:8989', 'Starting');

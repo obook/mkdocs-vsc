@@ -21,10 +21,10 @@
  */
 
 const vscode = require('vscode');
-const server = require('./src/server');
-const statusBar = require('./src/statusBar');
-const preview = require('./src/preview');
-const { getConfig, SECTION } = require('./src/config');
+const server = require('./src/server/server');
+const statusBar = require('./src/ui/statusBar');
+const preview = require('./src/ui/preview');
+const { getConfig, SECTION } = require('./src/config/config');
 
 /**
  * Activates the extension: initializes modules, registers commands and

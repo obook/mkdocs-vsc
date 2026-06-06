@@ -12,7 +12,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { shouldUseShell } = require('../src/spawn');
+const { shouldUseShell } = require('../../src/util/spawn');
 
 test('Windows: a bare command name requires shell mode', () => {
   assert.strictEqual(shouldUseShell('mkdocs', 'win32'), true);

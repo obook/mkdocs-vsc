@@ -13,10 +13,10 @@
  */
 
 const vscode = require('vscode');
-const { getConfig } = require('./config');
-const { pagePathForFile, findProjectRoot } = require('./project');
+const { getConfig } = require('../config/config');
+const { pagePathForFile, findProjectRoot } = require('../domain/project');
 const { webviewHtml } = require('./webview');
-const server = require('./server');
+const server = require('../server/server');
 
 /** The single reusable preview panel, or null when closed. @type {vscode.WebviewPanel | null} */
 let panel = null;

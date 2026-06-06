@@ -12,7 +12,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { stripAnsi } = require('../src/ansi');
+const { stripAnsi } = require('../../src/util/ansi');
 
 /* ESC built at runtime so this source file stays plain ASCII. */
 const ESC = String.fromCharCode(27);

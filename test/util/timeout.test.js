@@ -12,7 +12,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { clampReadyTimeoutMs, pollUntilReady } = require('../src/timeout');
+const { clampReadyTimeoutMs, pollUntilReady } = require('../../src/util/timeout');
 
 const DEFAULT_MS = 120000;
 const MIN_MS = 5000;

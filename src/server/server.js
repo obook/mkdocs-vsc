@@ -15,12 +15,12 @@
 const vscode = require('vscode');
 const cp = require('child_process');
 const net = require('net');
-const { getConfig } = require('./config');
-const { findProjectRoot, resolveMkdocsCmd } = require('./project');
+const { getConfig } = require('../config/config');
+const { findProjectRoot, resolveMkdocsCmd } = require('../domain/project');
 const { preflight } = require('./preflight');
-const { clampReadyTimeoutMs, pollUntilReady } = require('./timeout');
-const { shouldUseShell } = require('./spawn');
-const { stripAnsi } = require('./ansi');
+const { clampReadyTimeoutMs, pollUntilReady } = require('../util/timeout');
+const { shouldUseShell } = require('../util/spawn');
+const { stripAnsi } = require('../util/ansi');
 
 /** Running server process, or null when stopped. @type {import('child_process').ChildProcess | null} */
 let serverProc = null;

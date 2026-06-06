@@ -12,7 +12,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { buildInstallCommand } = require('../src/install');
+const { buildInstallCommand } = require('../../src/server/install');
 
 test('Linux: installs mkdocs in a venv', () => {
   assert.strictEqual(

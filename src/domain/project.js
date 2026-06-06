@@ -15,7 +15,7 @@
 const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
-const { getConfig } = require('./config');
+const { getConfig } = require('../config/config');
 const { computePagePath } = require('./mapping');
 
 /** Maximum number of parent folders to climb when looking for mkdocs.yml. */

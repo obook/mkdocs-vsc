@@ -12,7 +12,7 @@
  */
 
 const vscode = require('vscode');
-const server = require('./server');
+const server = require('../server/server');
 
 /** The status bar item, or null before init. @type {vscode.StatusBarItem} */
 let item = null;

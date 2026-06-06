@@ -15,9 +15,9 @@ const vscode = require('vscode');
 const cp = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const { resolveMkdocsCmd } = require('./project');
+const { resolveMkdocsCmd } = require('../domain/project');
 const { buildInstallCommand } = require('./install');
-const { shouldUseShell } = require('./spawn');
+const { shouldUseShell } = require('../util/spawn');
 
 /** Time (ms) after which a probe command is assumed to have started. */
 const PROBE_TIMEOUT_MS = 4000;
