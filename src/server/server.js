@@ -14,13 +14,12 @@
 
 const vscode = require('vscode');
 const cp = require('child_process');
-const net = require('net');
 const { getConfig } = require('../config/config');
 const { findProjectRoot, resolveMkdocsCmd } = require('../domain/project');
 const { preflight } = require('./preflight');
-const { clampReadyTimeoutMs, pollUntilReady } = require('../util/timeout');
 const { shouldUseShell } = require('../util/spawn');
 const { stripAnsi } = require('../util/ansi');
+const readiness = require('./readiness');
 
 /** Running server process, or null when stopped. @type {import('child_process').ChildProcess | null} */
 let serverProc = null;
@@ -31,10 +30,6 @@ let output = null;
 /** Listener invoked whenever the running state changes. */
 let onStateChange = () => {};
 
-/** Default time (ms) to wait for the server to answer after a start. */
-const DEFAULT_READY_TIMEOUT_MS = 120000;
-/** Hard floor (ms) for the configured ready timeout. */
-const MIN_READY_TIMEOUT_MS = 5000;
 /** How long (ms) to wait for a killed process to report its exit. */
 const STOP_TIMEOUT_MS = 3000;
 
@@ -204,69 +199,26 @@ async function restart(rootOverride) {
 }
 
 /**
- * Tells whether a server already listens on host:port (short TCP probe).
- *
- * @param {string} host - Host to probe.
- * @param {number} port - Port to probe.
- * @param {number} timeout - Probe timeout (ms).
- * @returns {Promise<boolean>} True if a connection succeeded.
- */
-function isPortOpen(host, port, timeout = 600) {
-  return new Promise((resolve) => {
-    const socket = new net.Socket();
-    let settled = false;
-    function finish(open) {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      socket.destroy();
-      resolve(open);
-    }
-    socket.setTimeout(timeout);
-    socket.once('connect', () => finish(true));
-    socket.once('timeout', () => finish(false));
-    socket.once('error', () => finish(false));
-    socket.connect(port, host);
-  });
-}
-
-/**
- * Reads the configured ready timeout (in seconds) and returns it as a
- * millisecond duration. Thin wrapper around the pure `clampReadyTimeoutMs`
- * so the VS Code dependency stays on this side of the boundary.
- *
- * @returns {number} Ready timeout in milliseconds.
- */
-function getReadyTimeoutMs() {
-  return clampReadyTimeoutMs(
-    getConfig().get('readyTimeout'),
-    DEFAULT_READY_TIMEOUT_MS,
-    MIN_READY_TIMEOUT_MS
-  );
-}
-
-/**
- * Waits for the server to answer. The initial build can take from a few
- * seconds (small sites) to over a minute (large sites with heavy themes such
- * as pyodide-mkdocs-theme), hence the configurable timeout. Returns early if
- * the server process exits in the meantime, so the preview can surface the
- * failure immediately instead of waiting out the full ready timeout.
+ * Waits for the running server to answer, aborting early if it exits. The
+ * network probing and the polling loop live in the readiness module; this
+ * wrapper supplies the configured host, port and timeout, and ties the abort
+ * condition to our running process.
  *
  * @param {number} [timeoutMs] - Maximum time to wait (ms). Defaults to the
  *        configured `readyTimeout`.
  * @returns {Promise<boolean>} True once the port answers, false on abort or
  *          timeout.
  */
-async function waitForReady(timeoutMs) {
-  const limit = typeof timeoutMs === 'number' ? timeoutMs : getReadyTimeoutMs();
+function waitForReady(timeoutMs) {
   const cfg = getConfig();
-  const host = cfg.get('host');
-  const port = cfg.get('port');
-  return pollUntilReady({
-    isReady: () => isPortOpen(host, port, 500),
-    isAborted: () => !serverProc,
-    timeoutMs: limit
+  const limit = typeof timeoutMs === 'number'
+    ? timeoutMs
+    : readiness.resolveReadyTimeoutMs(cfg.get('readyTimeout'));
+  return readiness.waitForReady({
+    host: cfg.get('host'),
+    port: cfg.get('port'),
+    timeoutMs: limit,
+    isAborted: () => !serverProc
   });
 }
 
@@ -307,7 +259,7 @@ async function ensure(rootOverride) {
   /* A busy port means a foreign server only when we did not just stop our own
      one (whose port might still be releasing). */
   const cfg = getConfig();
-  if (!stoppedOurs && (await isPortOpen(cfg.get('host'), cfg.get('port')))) {
+  if (!stoppedOurs && (await readiness.isPortOpen(cfg.get('host'), cfg.get('port')))) {
     vscode.window.showWarningMessage(
       vscode.l10n.t(
         'Port {0} is already in use. The preview may show another project. Stop that server or change "mkdocsLivePreview.port".',

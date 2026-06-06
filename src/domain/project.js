@@ -17,6 +17,7 @@ const fs = require('fs');
 const path = require('path');
 const { getConfig } = require('../config/config');
 const { computePagePath } = require('./mapping');
+const { parseMkdocsConfig } = require('./mkdocsConfig');
 
 /** Maximum number of parent folders to climb when looking for mkdocs.yml. */
 const MAX_CLIMB = 12;
@@ -92,6 +93,9 @@ function resolveMkdocsCmd(root) {
   return fs.existsSync(venvBin) ? venvBin : 'mkdocs';
 }
 
+/** Cache of the parsed mkdocs.yml, keyed by file path and modification time. */
+let configCache = { file: null, mtimeMs: 0, value: null };
+
 /**
  * Reads docs_dir and use_directory_urls from mkdocs.yml with light parsing.
  *
@@ -99,13 +103,8 @@ function resolveMkdocsCmd(root) {
  * @returns {{ docsDir: string, useDirUrls: boolean }} The two settings, with
  *          the MkDocs defaults when the file cannot be read.
  */
-/** Cache of the parsed mkdocs.yml, keyed by file path and modification time. */
-let configCache = { file: null, mtimeMs: 0, value: null };
-
 function readMkdocsConfig(root) {
   const file = path.join(root, getConfig().get('configFile'));
-  let docsDir = 'docs';
-  let useDirUrls = true; /* MkDocs default. */
   try {
     /* This runs on every editor change, so re-parse only when the file
        actually changed. */
@@ -114,19 +113,11 @@ function readMkdocsConfig(root) {
       return configCache.value;
     }
     const text = fs.readFileSync(file, 'utf8');
-    const docsMatch = text.match(/^\s*docs_dir\s*:\s*(.+?)\s*$/m);
-    if (docsMatch) {
-      docsDir = docsMatch[1].replace(/['"]/g, '').trim();
-    }
-    const urlsMatch = text.match(/^\s*use_directory_urls\s*:\s*(true|false)\s*$/m);
-    if (urlsMatch) {
-      useDirUrls = urlsMatch[1] === 'true';
-    }
-    configCache = { file, mtimeMs, value: { docsDir, useDirUrls } };
+    configCache = { file, mtimeMs, value: parseMkdocsConfig(text) };
     return configCache.value;
   } catch {
-    /* No readable mkdocs.yml: keep the defaults. */
-    return { docsDir, useDirUrls };
+    /* No readable mkdocs.yml: keep the MkDocs defaults. */
+    return parseMkdocsConfig('');
   }
 }
 

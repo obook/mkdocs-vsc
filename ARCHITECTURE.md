@@ -32,10 +32,12 @@ src/
     statusBar.js          the status bar item showing the server state
   server/                 the mkdocs serve process and its preconditions
     server.js             start / stop / restart, project tracking
+    readiness.js          TCP probe and wait-until-the-server-answers loop
     preflight.js          checks that mkdocs and Python can run
     install.js            OS-aware install suggestions on failure
   domain/                 the MkDocs project and its pages
     project.js            find mkdocs.yml, read its config, resolve mkdocs
+    mkdocsConfig.js       parse docs_dir and use_directory_urls from the file
     mapping.js            map a Markdown file to its built page URL
   config/                 the extension settings
     config.js             read mkdocsLivePreview.* settings
@@ -78,6 +80,10 @@ never touches the VS Code configuration API directly.
   `PATH`) and `pagePathForFile` (maps the active file to its built page URL). It
   reads `docs_dir` and `use_directory_urls` from `mkdocs.yml` with bounded
   regular expressions.
+- `mkdocsConfig.js` exports `parseMkdocsConfig`, the pure function that reads
+  `docs_dir` and `use_directory_urls` from the `mkdocs.yml` text. It is split
+  out from `project.js` so the parsing rules can be tested without any file
+  system, while `project.js` keeps the file reading and the cache.
 - `mapping.js` exports `computePagePath`, the pure function that turns a file
   path into a page URL given the project settings. It is split out from
   `project.js` so the mapping rules can be tested without any file system.
@@ -87,7 +93,12 @@ never touches the VS Code configuration API directly.
 - `server.js` exports the lifecycle: start, stop and restart the `mkdocs serve`
   child process. It records the project the server was started for, restarts it
   when the active project changes, and refuses to silently reuse a foreign
-  server already bound to the port.
+  server already bound to the port. It binds the VS Code settings to the pure
+  `readiness` module and ties the abort condition to its running process.
+- `readiness.js` exports `isPortOpen` (a short TCP probe), `resolveReadyTimeoutMs`
+  (the configured timeout, clamped) and `waitForReady` (the polling loop that
+  waits for the initial build). It carries no VS Code API, so the network
+  behavior can be unit-tested; `server.js` supplies the host, port and timeout.
 - `preflight.js` exports `preflight`, which runs before the server starts: it
   checks that `mkdocs` (then Python) can execute and, on failure, shows OS-aware
   guidance.
