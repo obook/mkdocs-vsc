@@ -10,7 +10,7 @@ Planned improvements for MkDocs Live Preview. Checked items are done.
 - [ ] Update the GitHub Actions in `.github/workflows/ci.yml` (`actions/checkout`,
   `actions/setup-node`, `actions/upload-artifact`, `softprops/action-gh-release`)
   to versions that support Node.js 24. Node.js 20 is forced off on 2026-06-16 and
-  removed from the runner on 2026-09-16.
+  removed from the runner on 2026-09-16. (see #3)
 
 ## Features and UX
 
