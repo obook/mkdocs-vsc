@@ -1,6 +1,7 @@
 .*/**
 .gitignore
 dist/**
+docs/**
 test/**
 build.sh
 jsconfig.json
