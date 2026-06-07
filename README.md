@@ -42,7 +42,7 @@ The extension embeds `mkdocs serve` in an iframe (a webview panel). It does not
 touch the editor: you edit the Markdown source as usual, and the panel on the
 side shows the faithful rendering.
 
-See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the internal design.
+See [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the internal design.
 
 ## Commands
 
@@ -157,9 +157,9 @@ from VSIX...*.
 
 ## Security, privacy and accessibility
 
-- [`SECURITY.md`](SECURITY.md) - security assessment (ANSSI secure development guide).
-- [`GDPR.md`](GDPR.md) - privacy assessment (GDPR): no data collected, no telemetry.
-- [`ACCESSIBILITY.md`](ACCESSIBILITY.md) - accessibility statement (RGAA 4.x).
+- [`SECURITY.md`](.github/SECURITY.md) - security assessment (ANSSI secure development guide).
+- [`GDPR.md`](docs/GDPR.md) - privacy assessment (GDPR): no data collected, no telemetry.
+- [`ACCESSIBILITY.md`](docs/ACCESSIBILITY.md) - accessibility statement (RGAA 4.x).
 
 ## Tools and licenses
 

@@ -4,7 +4,7 @@ Thank you for your interest in improving this extension. Contributions of all
 kinds are welcome: bug reports, feature ideas, documentation fixes, and code.
 
 This is a small, dependency-free VS Code extension written in plain JavaScript.
-Please read [`ARCHITECTURE.md`](ARCHITECTURE.md) before sending non-trivial code,
+Please read [`ARCHITECTURE.md`](../docs/ARCHITECTURE.md) before sending non-trivial code,
 so your change fits the existing design.
 
 ## Ways to contribute
@@ -64,7 +64,7 @@ Unit tests run on the built-in Node test runner, with no external dependency:
 npm test
 ```
 
-The same command runs in [continuous integration](.github/workflows/ci.yml) on
+The same command runs in [continuous integration](workflows/ci.yml) on
 every push and pull request, so make sure it passes locally before you submit.
 
 Tests live in `test/` and mirror the modules in `src/`. Please add or update
@@ -122,7 +122,7 @@ change needs explanation.
 2. Make your change, with tests where it makes sense.
 3. Run `npm test` and confirm it passes.
 4. Update the documentation when behavior changes: the README, `ARCHITECTURE.md`,
-   and a new entry under the **Unreleased** section of [`CHANGELOG.md`](CHANGELOG.md)
+   and a new entry under the **Unreleased** section of [`CHANGELOG.md`](../CHANGELOG.md)
    when appropriate. The changelog follows
    [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 5. Open a pull request against `main` with a clear description of what changes
@@ -141,4 +141,4 @@ every level of experience.
 ## License
 
 By contributing, you agree that your contributions are licensed under the
-[MIT License](LICENSE), the same license as the project.
+[MIT License](../LICENSE), the same license as the project.
